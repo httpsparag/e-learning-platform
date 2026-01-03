@@ -1,16 +1,17 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Moon, Sun, Menu, X } from "lucide-react";
+import { Moon, Sun, Menu, X, User } from "lucide-react";
 import { useState, useEffect } from "react";
 
 export function FloatingNavbar() {
   const navigate = useNavigate();
-  const [dark, setDark] = useState(false);
+  const [dark, setDark] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    const isDark = document.documentElement.classList.contains("dark");
-    setDark(isDark);
+    // Apply dark mode by default on mount
+    document.documentElement.classList.add("dark");
+    setDark(true);
   }, []);
 
   function toggleTheme() {
@@ -68,55 +69,30 @@ export function FloatingNavbar() {
           <div className="hidden sm:flex items-center gap-0.5 sm:gap-1 lg:gap-2">
             <NavItem label="Courses" onClick={() => navigate("/courses")} />
             <NavItem label="Dashboard" onClick={() => navigate("/dashboard")} />
-            <NavItem label="About" onClick={() => navigate("/about")} />
-
-            {/* Theme Toggle Button - Desktop */}
-            <motion.button
-              onClick={toggleTheme}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              className="
-                w-6 sm:w-8 lg:w-9 h-6 sm:h-8 lg:h-9
-                rounded-full
-                flex items-center justify-center
-                bg-white/15
-                backdrop-blur-xl
-                hover:bg-white/25
-                transition-all duration-200
-                text-white
-              "
-              style={{
-                WebkitBackdropFilter: "blur(20px)",
-              }}
-            >
-              {dark ? (
-                <Sun size={12} className="sm:w-4 lg:w-4 text-yellow-400" />
-              ) : (
-                <Moon size={12} className="sm:w-4 lg:w-4" />
-              )}
-            </motion.button>
+            <NavItem label="Live Class" onClick={() => navigate("/live/1")} />
           </div>
 
           {/* Spacer */}
           <div className="hidden sm:block flex-1" />
 
-          {/* CTA Button */}
+          {/* Profile Circle */}
           <motion.button
-            onClick={() => navigate("/signup")}
-            whileHover={{ scale: 1.05 }}
+            onClick={() => navigate("/profile")}
+            whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
             className="
-              px-3 sm:px-5 lg:px-6 py-1.5 sm:py-2 lg:py-2.5
+              w-10 h-10 sm:w-11 sm:h-11 lg:w-12 lg:h-12
               rounded-full
-              bg-blue-500
-              hover:bg-blue-600
+              bg-gradient-to-br from-blue-400 to-blue-600
+              hover:from-blue-500 hover:to-blue-700
               text-white
-              text-[11px] sm:text-sm lg:text-sm font-semibold
+              flex items-center justify-center
               transition-all duration-200
-              whitespace-nowrap
+              shadow-lg shadow-blue-500/30
+              border border-white/20
             "
           >
-            Get Started
+            <User size={20} className="sm:w-5 sm:h-5 lg:w-6 lg:h-6" />
           </motion.button>
 
           {/* Mobile Menu Button - At Last */}
@@ -225,7 +201,7 @@ export function FloatingNavbar() {
 
           <motion.button
             onClick={() => {
-              navigate("/about");
+              navigate("/live/1");
               setMobileMenuOpen(false);
             }}
             whileTap={{ scale: 0.95 }}
@@ -246,38 +222,7 @@ export function FloatingNavbar() {
               WebkitBackdropFilter: "blur(20px)",
             }}
           >
-            ℹ️ About
-          </motion.button>
-
-          {/* Divider */}
-          <div className="h-px bg-gradient-to-r from-transparent via-white/20 to-transparent my-1" />
-
-          {/* Theme Toggle */}
-          <motion.button
-            onClick={() => {
-              toggleTheme();
-              setMobileMenuOpen(false);
-            }}
-            whileTap={{ scale: 0.95 }}
-            className="
-              w-full text-left
-              px-4 py-3
-              rounded-xl
-              text-sm font-medium
-              text-white
-              bg-white/10
-              hover:bg-white/20
-              backdrop-blur-xl
-              transition-all duration-200
-              border border-white/10
-              hover:border-white/30
-              flex items-center justify-between
-            "
-            style={{
-              WebkitBackdropFilter: "blur(20px)",
-            }}
-          >
-            <span>{dark ? "🌙 Dark Mode" : "☀️ Light Mode"}</span>
+            🎥 Live Class
           </motion.button>
         </div>
       </motion.div>

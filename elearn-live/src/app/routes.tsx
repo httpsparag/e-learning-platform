@@ -16,6 +16,8 @@ import {
   CourseManagement,
   LiveScheduler,
   UserAnalytics,
+  Payments,
+  Settings,
 } from "../pages/admin";
 
 export const router = createBrowserRouter([
@@ -39,6 +41,8 @@ export const router = createBrowserRouter([
       { path: "/admin/courses", element: <CourseManagement /> },
       { path: "/admin/schedule", element: <LiveScheduler /> },
       { path: "/admin/analytics", element: <UserAnalytics /> },
+      { path: "/admin/payments", element: <Payments /> },
+      { path: "/admin/settings", element: <Settings /> },
     ],
   },
 ]);
