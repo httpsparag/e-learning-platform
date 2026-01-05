@@ -30,17 +30,21 @@ export const Login = () => {
       // Check if user was redirected from enrollment
       const enrollmentRedirect = location.state?.redirectAfterAuth;
       
-      // Redirect based on role or enrollment intent
+      // Get user role
       const user = response.data.user;
-      if (enrollmentRedirect) {
-        navigate(enrollmentRedirect);
-      } else if (user.role === 'admin') {
-        navigate("/admin");
-      } else if (user.role === 'instructor') {
-        navigate("/instructor/dashboard");
-      } else {
-        navigate("/dashboard");
-      }
+      
+      // Wait a moment for context to update
+      setTimeout(() => {
+        if (enrollmentRedirect) {
+          navigate(enrollmentRedirect);
+        } else if (user.role === 'admin') {
+          navigate("/admin");
+        } else if (user.role === 'instructor') {
+          navigate("/instructor/dashboard");
+        } else {
+          navigate("/");
+        }
+      }, 100);
     } catch (err: any) {
       setError(err.response?.data?.message || "Login failed");
     } finally {

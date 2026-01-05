@@ -12,6 +12,7 @@ export function Payment() {
   const [paymentMethod, setPaymentMethod] = useState("card");
   const [promoCode, setPromoCode] = useState("");
   const [showPromo, setShowPromo] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Mock course data
   const courseData = {
@@ -37,8 +38,8 @@ export function Payment() {
     <>
       <FloatingNavbar />
       
-      <div className="min-h-screen bg-gray-50 pt-24 pb-16">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen pt-24 pb-16 bg-gray-50">
+        <div className="max-w-6xl px-4 mx-auto sm:px-6 lg:px-8">
           
           {/* Header */}
           <motion.div
@@ -46,7 +47,7 @@ export function Payment() {
             animate={{ opacity: 1, y: 0 }}
             className="mb-8"
           >
-            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+            <h1 className="mb-2 text-3xl font-bold text-gray-900 sm:text-4xl">
               Complete Your Purchase
             </h1>
             <p className="text-gray-600">
@@ -65,11 +66,11 @@ export function Payment() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="bg-white rounded-xl p-6 border-2 border-gray-200 shadow-sm"
+                className="p-6 bg-white border-2 border-gray-200 shadow-sm rounded-xl"
               >
-                <h2 className="text-xl font-bold text-gray-900 mb-6">Payment Method</h2>
+                <h2 className="mb-6 text-xl font-bold text-gray-900">Payment Method</h2>
                 
-                <div className="space-y-3 mb-6">
+                <div className="mb-6 space-y-3">
                   {/* Card Payment */}
                   <label className={`flex items-center p-4 rounded-lg border-2 cursor-pointer transition-all ${
                     paymentMethod === "card" 
@@ -86,7 +87,7 @@ export function Payment() {
                     />
                     <CreditCard className="ml-3 text-gray-700" size={20} />
                     <span className="ml-3 font-semibold text-gray-900">Credit / Debit Card</span>
-                    <div className="ml-auto flex gap-2">
+                    <div className="flex gap-2 ml-auto">
                       <img src="https://upload.wikimedia.org/wikipedia/commons/0/04/Visa.svg" alt="Visa" className="h-5" />
                       <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard" className="h-5" />
                     </div>
@@ -106,7 +107,7 @@ export function Payment() {
                       onChange={(e) => setPaymentMethod(e.target.value)}
                       className="w-4 h-4 text-blue-600"
                     />
-                    <span className="ml-7 font-semibold text-gray-900">UPI</span>
+                    <span className="font-semibold text-gray-900 ml-7">UPI</span>
                     <span className="ml-auto text-sm text-gray-600">Google Pay, PhonePe, Paytm</span>
                   </label>
 
@@ -124,7 +125,7 @@ export function Payment() {
                       onChange={(e) => setPaymentMethod(e.target.value)}
                       className="w-4 h-4 text-blue-600"
                     />
-                    <span className="ml-7 font-semibold text-gray-900">Net Banking</span>
+                    <span className="font-semibold text-gray-900 ml-7">Net Banking</span>
                   </label>
                 </div>
 
@@ -133,50 +134,50 @@ export function Payment() {
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
-                    className="space-y-4 pt-6 border-t-2 border-gray-200"
+                    className="pt-6 space-y-4 border-t-2 border-gray-200"
                   >
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className="block mb-2 text-sm font-semibold text-gray-700">
                         Card Number
                       </label>
                       <input
                         type="text"
                         placeholder="1234 5678 9012 3456"
-                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-600 text-gray-900"
+                        className="w-full px-4 py-3 text-gray-900 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-600"
                       />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        <label className="block mb-2 text-sm font-semibold text-gray-700">
                           Expiry Date
                         </label>
                         <input
                           type="text"
                           placeholder="MM / YY"
-                          className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-600 text-gray-900"
+                          className="w-full px-4 py-3 text-gray-900 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-600"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        <label className="block mb-2 text-sm font-semibold text-gray-700">
                           CVV
                         </label>
                         <input
                           type="text"
                           placeholder="123"
-                          className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-600 text-gray-900"
+                          className="w-full px-4 py-3 text-gray-900 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-600"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className="block mb-2 text-sm font-semibold text-gray-700">
                         Cardholder Name
                       </label>
                       <input
                         type="text"
                         placeholder="John Doe"
-                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-600 text-gray-900"
+                        className="w-full px-4 py-3 text-gray-900 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-600"
                       />
                     </div>
                   </motion.div>
@@ -189,13 +190,13 @@ export function Payment() {
                     animate={{ opacity: 1, height: "auto" }}
                     className="pt-6 border-t-2 border-gray-200"
                   >
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block mb-2 text-sm font-semibold text-gray-700">
                       UPI ID
                     </label>
                     <input
                       type="text"
                       placeholder="yourname@upi"
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-600 text-gray-900"
+                      className="w-full px-4 py-3 text-gray-900 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-600"
                     />
                   </motion.div>
                 )}
@@ -207,10 +208,10 @@ export function Payment() {
                     animate={{ opacity: 1, height: "auto" }}
                     className="pt-6 border-t-2 border-gray-200"
                   >
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block mb-2 text-sm font-semibold text-gray-700">
                       Select Your Bank
                     </label>
-                    <select className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-600 text-gray-900">
+                    <select className="w-full px-4 py-3 text-gray-900 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-600">
                       <option>Choose your bank</option>
                       <option>State Bank of India</option>
                       <option>HDFC Bank</option>
@@ -227,50 +228,50 @@ export function Payment() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="bg-white rounded-xl p-6 border-2 border-gray-200 shadow-sm"
+                className="p-6 bg-white border-2 border-gray-200 shadow-sm rounded-xl"
               >
-                <h2 className="text-xl font-bold text-gray-900 mb-6">Billing Information</h2>
+                <h2 className="mb-6 text-xl font-bold text-gray-900">Billing Information</h2>
                 
                 <div className="space-y-4">
-                  <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className="block mb-2 text-sm font-semibold text-gray-700">
                         First Name
                       </label>
                       <input
                         type="text"
                         placeholder="John"
-                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-600 text-gray-900"
+                        className="w-full px-4 py-3 text-gray-900 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-600"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className="block mb-2 text-sm font-semibold text-gray-700">
                         Last Name
                       </label>
                       <input
                         type="text"
                         placeholder="Doe"
-                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-600 text-gray-900"
+                        className="w-full px-4 py-3 text-gray-900 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-600"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block mb-2 text-sm font-semibold text-gray-700">
                       Email Address
                     </label>
                     <input
                       type="email"
                       placeholder="john.doe@example.com"
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-600 text-gray-900"
+                      className="w-full px-4 py-3 text-gray-900 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-600"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block mb-2 text-sm font-semibold text-gray-700">
                       Country
                     </label>
-                    <select className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-600 text-gray-900">
+                    <select className="w-full px-4 py-3 text-gray-900 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-600">
                       <option>India</option>
                       <option>United States</option>
                       <option>United Kingdom</option>
@@ -285,9 +286,9 @@ export function Payment() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="flex items-center gap-3 p-4 bg-blue-50 border-2 border-blue-200 rounded-xl"
+                className="flex items-center gap-3 p-4 border-2 border-blue-200 bg-blue-50 rounded-xl"
               >
-                <ShieldCheck className="text-blue-600 flex-shrink-0" size={24} />
+                <ShieldCheck className="flex-shrink-0 text-blue-600" size={24} />
                 <div>
                   <p className="text-sm font-semibold text-gray-900">Secure Payment</p>
                   <p className="text-xs text-gray-600">Your payment information is encrypted and secure</p>
@@ -301,19 +302,19 @@ export function Payment() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="bg-white rounded-xl p-6 border-2 border-gray-200 shadow-sm sticky top-24"
+                className="sticky p-6 bg-white border-2 border-gray-200 shadow-sm rounded-xl top-24"
               >
-                <h2 className="text-xl font-bold text-gray-900 mb-6">Order Summary</h2>
+                <h2 className="mb-6 text-xl font-bold text-gray-900">Order Summary</h2>
 
                 {/* Course Details */}
-                <div className="flex gap-4 mb-6 pb-6 border-b-2 border-gray-200">
+                <div className="flex gap-4 pb-6 mb-6 border-b-2 border-gray-200">
                   <img 
                     src={courseData.thumbnail} 
                     alt={courseData.title}
-                    className="w-24 h-16 object-cover rounded-lg"
+                    className="object-cover w-24 h-16 rounded-lg"
                   />
                   <div className="flex-1">
-                    <h3 className="font-bold text-gray-900 text-sm mb-1 line-clamp-2">
+                    <h3 className="mb-1 text-sm font-bold text-gray-900 line-clamp-2">
                       {courseData.title}
                     </h3>
                     <p className="text-xs text-gray-600">by {courseData.instructor}</p>
@@ -321,12 +322,12 @@ export function Payment() {
                 </div>
 
                 {/* Course Features */}
-                <div className="mb-6 pb-6 border-b-2 border-gray-200">
-                  <p className="text-sm font-semibold text-gray-700 mb-3">This course includes:</p>
+                <div className="pb-6 mb-6 border-b-2 border-gray-200">
+                  <p className="mb-3 text-sm font-semibold text-gray-700">This course includes:</p>
                   <div className="space-y-2">
                     {courseData.features.map((feature, index) => (
                       <div key={index} className="flex items-center gap-2">
-                        <CheckCircle size={16} className="text-blue-600 flex-shrink-0" />
+                        <CheckCircle size={16} className="flex-shrink-0 text-blue-600" />
                         <span className="text-sm text-gray-600">{feature}</span>
                       </div>
                     ))}
@@ -334,11 +335,11 @@ export function Payment() {
                 </div>
 
                 {/* Promo Code */}
-                <div className="mb-6 pb-6 border-b-2 border-gray-200">
+                <div className="pb-6 mb-6 border-b-2 border-gray-200">
                   {!showPromo ? (
                     <button
                       onClick={() => setShowPromo(true)}
-                      className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-semibold text-sm"
+                      className="flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700"
                     >
                       <Tag size={16} />
                       Have a promo code?
@@ -354,9 +355,9 @@ export function Payment() {
                           value={promoCode}
                           onChange={(e) => setPromoCode(e.target.value)}
                           placeholder="Enter code"
-                          className="flex-1 px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-600 text-gray-900"
+                          className="flex-1 px-4 py-2 text-gray-900 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-600"
                         />
-                        <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors">
+                        <button className="px-4 py-2 font-semibold text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700">
                           Apply
                         </button>
                       </div>
@@ -365,12 +366,12 @@ export function Payment() {
                 </div>
 
                 {/* Price Breakdown */}
-                <div className="space-y-3 mb-6">
+                <div className="mb-6 space-y-3">
                   <div className="flex justify-between text-gray-700">
                     <span>Original Price</span>
                     <span className="line-through">${courseData.originalPrice}</span>
                   </div>
-                  <div className="flex justify-between text-green-600 font-semibold">
+                  <div className="flex justify-between font-semibold text-green-600">
                     <span>Discount (50% OFF)</span>
                     <span>-${discount}</span>
                   </div>
@@ -382,15 +383,40 @@ export function Payment() {
                     <span>Tax (GST 18%)</span>
                     <span className="font-semibold">${tax}</span>
                   </div>
-                  <div className="pt-3 border-t-2 border-gray-200 flex justify-between text-xl font-bold text-gray-900">
+                  <div className="flex justify-between pt-3 text-xl font-bold text-gray-900 border-t-2 border-gray-200">
                     <span>Total</span>
                     <span>${total}</span>
                   </div>
                 </div>
 
                 {/* Complete Payment Button */}
-                <button className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-lg shadow-md hover:shadow-lg transition-all mb-4">
-                  Complete Payment
+                <button 
+                  onClick={() => {
+                    setIsProcessing(true);
+                    setTimeout(() => {
+                      setIsProcessing(false);
+                      navigate('/dashboard', {
+                        state: {
+                          message: 'Payment successful! You are now enrolled in the course.',
+                        },
+                      });
+                    }, 2000);
+                  }}
+                  disabled={isProcessing}
+                  className={`w-full py-4 rounded-lg font-bold text-lg shadow-md hover:shadow-lg transition-all mb-4 text-white ${
+                    isProcessing 
+                      ? 'bg-gray-400 cursor-not-allowed' 
+                      : 'bg-blue-600 hover:bg-blue-700'
+                  }`}
+                >
+                  {isProcessing ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <div className="w-5 h-5 border-b-2 border-white rounded-full animate-spin"></div>
+                      Processing Payment...
+                    </span>
+                  ) : (
+                    'Complete Payment'
+                  )}
                 </button>
 
                 {/* Money Back Guarantee */}

@@ -37,12 +37,13 @@ export const Enrollment: React.FC = () => {
     try {
       // Call enrollment API
       // const response = await enrollmentService.enroll(courseId);
-      // On success, redirect to payment or dashboard
+      // On success, redirect to payment page
       setTimeout(() => {
         setIsProcessing(false);
-        navigate('/dashboard', {
+        navigate('/payment', {
           state: {
-            message: 'Successfully enrolled in the course!',
+            courseId: courseId,
+            message: 'Enrollment completed! Now proceed to payment',
           },
         });
       }, 2000);

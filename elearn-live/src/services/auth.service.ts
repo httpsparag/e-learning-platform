@@ -37,6 +37,8 @@ class AuthService {
   async login(data: LoginData) {
     const response = await api.post('/auth/login', data);
     localStorage.setItem('accessToken', response.data.data.accessToken);
+    // Dispatch custom event to notify other parts of the app
+    window.dispatchEvent(new CustomEvent('authTokenSet', { detail: { token: response.data.data.accessToken } }));
     return response.data;
   }
 

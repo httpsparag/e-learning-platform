@@ -38,7 +38,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           const response = await authService.getMe();
           if (response.success && response.data) {
-            setUser(response.data);
+            const userData = response.data.user || response.data;
+            setUser(userData);
+            setIsAuthenticated(true);
+          }
+        } catch (error) {
+          localStorage.removeItem('accessToken');
+          setIsAuthenticated(false);
+        }
+      } else {
+        setIsAuthenticated(false);
+      }
+      setIsLoading(false);
+    };
+
+    initializeAuth();
+  }, []);
+
+  // Listen for token changes
+  useEffect(() => {
+    const handleTokenSet = async () => {
+      const token = localStorage.getItem('accessToken');
+      if (token) {
+        try {
+          const response = await authService.getMe();
+          if (response.success && response.data) {
+            const userData = response.data.user || response.data;
+            setUser(userData);
             setIsAuthenticated(true);
           }
         } catch (error) {
@@ -46,10 +72,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setIsAuthenticated(false);
         }
       }
-      setIsLoading(false);
     };
 
-    initializeAuth();
+    window.addEventListener('authTokenSet', handleTokenSet);
+    return () => window.removeEventListener('authTokenSet', handleTokenSet);
   }, []);
 
   const register = useCallback(async (name: string, email: string, password: string, confirmPassword: string) => {

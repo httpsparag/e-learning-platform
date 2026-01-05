@@ -9,15 +9,17 @@ import { VerifyEmail } from "./pages/auth/VerifyEmail";
 import { ForgotPassword } from "./pages/auth/ForgotPassword";
 import { ResetPassword } from "./pages/auth/ResetPassword";
 
-// Public Pages
-import { Home } from "./pages/Home";
-import { Courses } from "./pages/Courses";
-
-// Protected Pages
-import { Dashboard } from "./pages/Dashboard";
-import { Profile } from "./pages/Profile";
-import { CourseDetail } from "./pages/user/CourseDetail";
-import { Enrollment } from "./pages/user/Enrollment";
+// User Pages
+import { 
+  Landing, 
+  Courses, 
+  CourseDetail, 
+  Dashboard, 
+  Profile, 
+  LiveClass, 
+  Payment, 
+  Enrollment 
+} from "./pages/user";
 
 // Admin Pages
 import { AdminDashboard } from "./pages/admin/AdminDashboard";
@@ -25,7 +27,7 @@ import { CourseManagement } from "./pages/admin/CourseManagement";
 import { UserAnalytics } from "./pages/admin/UserAnalytics";
 import { LiveScheduler } from "./pages/admin/LiveScheduler";
 import { Payments } from "./pages/admin/Payments";
-import { SettingsPage } from "./pages/admin/SettingsPage";
+import { Settings } from "./pages/admin/Settings";
 
 function App() {
   return (
@@ -33,7 +35,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           {/* Public Routes */}
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<Landing />} />
           <Route path="/courses" element={<Courses />} />
           <Route path="/courses/:courseId" element={<CourseDetail />} />
 
@@ -50,6 +52,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <Enrollment />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/live/:courseId"
+            element={
+              <ProtectedRoute>
+                <LiveClass />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/payment"
+            element={
+              <ProtectedRoute>
+                <Payment />
               </ProtectedRoute>
             }
           />
@@ -115,7 +133,7 @@ function App() {
             path="/admin/settings"
             element={
               <ProtectedRoute allowedRoles={['admin']}>
-                <SettingsPage />
+                <Settings />
               </ProtectedRoute>
             }
           />

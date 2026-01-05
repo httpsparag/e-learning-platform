@@ -29,7 +29,7 @@ export const Signup = () => {
       const response = await authService.register(formData);
       // Save userId and enrollment data for verification
       localStorage.setItem('pendingUserId', response.data.userId);
-      localStorage.setItem('enrollmentRedirect', location.state?.redirectAfterAuth || '/dashboard');
+      localStorage.setItem('enrollmentRedirect', location.state?.redirectAfterAuth || '/');
       navigate("/auth/verify-email", { 
         state: { 
           email: formData.email,

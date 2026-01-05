@@ -67,7 +67,7 @@ export const VerifyEmail = () => {
       
       setTimeout(() => {
         // If user was trying to enroll, redirect to login first
-        if (enrollmentRedirect && enrollmentRedirect !== '/dashboard') {
+        if (enrollmentRedirect && enrollmentRedirect !== '/') {
           localStorage.removeItem('enrollmentRedirect');
           navigate("/auth/login", {
             state: { redirectAfterAuth: enrollmentRedirect }

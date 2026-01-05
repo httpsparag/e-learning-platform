@@ -7,9 +7,11 @@ import {
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FloatingNavbar } from "../../components/layout/FloatingNavbar";
+import { useAuth } from "../../context/AuthContext";
 
 export function Dashboard() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("all");
 
   // Mock Data
@@ -124,7 +126,7 @@ export function Dashboard() {
     <>
       <FloatingNavbar />
       
-      <div className="min-h-screen bg-gray-50 pt-20">
+      <div className="min-h-screen pt-20 bg-gray-50">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
           
           {/* Welcome Header */}
@@ -133,8 +135,8 @@ export function Dashboard() {
             animate={{ opacity: 1, y: 0 }}
             className="mb-8"
           >
-            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-              Welcome back, Alex! 👋
+            <h1 className="mb-2 text-3xl font-bold text-gray-900 sm:text-4xl">
+              Welcome back, {user?.name }! 👋
             </h1>
             <p className="text-lg text-gray-600">
               Continue your learning journey and achieve your goals
@@ -142,14 +144,14 @@ export function Dashboard() {
           </motion.div>
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+          <div className="grid grid-cols-1 gap-4 mb-8 sm:grid-cols-2 lg:grid-cols-4 sm:gap-6">
             {stats.map((stat, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className="bg-white rounded-xl p-6 border-2 border-gray-200 hover:border-blue-600 hover:shadow-lg transition-all cursor-pointer group"
+                className="p-6 transition-all bg-white border-2 border-gray-200 cursor-pointer rounded-xl hover:border-blue-600 hover:shadow-lg group"
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className={`${stat.color} p-3 rounded-lg text-white group-hover:scale-110 transition-transform`}>
@@ -157,9 +159,9 @@ export function Dashboard() {
                   </div>
                   <TrendingUp size={20} className="text-green-600" />
                 </div>
-                <p className="text-3xl font-bold text-gray-900 mb-1">{stat.value}</p>
-                <p className="text-sm font-semibold text-gray-600 mb-2">{stat.label}</p>
-                <p className="text-xs text-green-600 font-medium">{stat.change}</p>
+                <p className="mb-1 text-3xl font-bold text-gray-900">{stat.value}</p>
+                <p className="mb-2 text-sm font-semibold text-gray-600">{stat.label}</p>
+                <p className="text-xs font-medium text-green-600">{stat.change}</p>
               </motion.div>
             ))}
           </div>
@@ -175,14 +177,14 @@ export function Dashboard() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="bg-white rounded-xl p-6 border-2 border-gray-200 shadow-sm"
+                className="p-6 bg-white border-2 border-gray-200 shadow-sm rounded-xl"
               >
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-1">Continue Learning</h2>
+                    <h2 className="mb-1 text-2xl font-bold text-gray-900">Continue Learning</h2>
                     <p className="text-sm text-gray-600">Pick up where you left off</p>
                   </div>
-                  <button className="text-blue-600 hover:text-blue-700 font-semibold text-sm flex items-center gap-1">
+                  <button className="flex items-center gap-1 text-sm font-semibold text-blue-600 hover:text-blue-700">
                     View All <ArrowRight size={16} />
                   </button>
                 </div>
@@ -195,26 +197,26 @@ export function Dashboard() {
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.3 + index * 0.1 }}
                       onClick={() => navigate(`/courses/${course.id}`)}
-                      className="flex gap-4 p-4 rounded-xl border-2 border-gray-200 hover:border-blue-600 hover:shadow-md transition-all cursor-pointer group"
+                      className="flex gap-4 p-4 transition-all border-2 border-gray-200 cursor-pointer rounded-xl hover:border-blue-600 hover:shadow-md group"
                     >
                       {/* Thumbnail */}
-                      <div className="relative w-32 h-24 rounded-lg overflow-hidden flex-shrink-0">
+                      <div className="relative flex-shrink-0 w-32 h-24 overflow-hidden rounded-lg">
                         <img 
                           src={course.thumbnail} 
                           alt={course.title}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                          className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-110"
                         />
-                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="absolute inset-0 flex items-center justify-center transition-opacity opacity-0 bg-black/40 group-hover:opacity-100">
                           <Play className="text-white" size={32} fill="white" />
                         </div>
                       </div>
 
                       {/* Content */}
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-gray-900 mb-1 line-clamp-1 group-hover:text-blue-600 transition-colors">
+                        <h3 className="mb-1 font-bold text-gray-900 transition-colors line-clamp-1 group-hover:text-blue-600">
                           {course.title}
                         </h3>
-                        <p className="text-sm text-gray-600 mb-3">by {course.instructor}</p>
+                        <p className="mb-3 text-sm text-gray-600">by {course.instructor}</p>
                         
                         {/* Progress Bar */}
                         <div className="mb-3">
@@ -222,16 +224,16 @@ export function Dashboard() {
                             <span className="text-xs font-semibold text-gray-700">Progress</span>
                             <span className="text-xs font-bold text-blue-600">{course.progress}%</span>
                           </div>
-                          <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div className="w-full h-2 overflow-hidden bg-gray-200 rounded-full">
                             <div 
-                              className="h-full bg-blue-600 rounded-full transition-all duration-500"
+                              className="h-full transition-all duration-500 bg-blue-600 rounded-full"
                               style={{ width: `${course.progress}%` }}
                             />
                           </div>
                         </div>
 
                         <div className="flex items-center justify-between text-xs">
-                          <span className="text-gray-600 font-medium">{course.nextLesson}</span>
+                          <span className="font-medium text-gray-600">{course.nextLesson}</span>
                           <span className="text-gray-500">{course.timeLeft}</span>
                         </div>
                       </div>
@@ -245,23 +247,23 @@ export function Dashboard() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
-                className="bg-white rounded-xl p-6 border-2 border-gray-200 shadow-sm"
+                className="p-6 bg-white border-2 border-gray-200 shadow-sm rounded-xl"
               >
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-2xl font-bold text-gray-900">Recent Achievements</h2>
                   <Trophy className="text-amber-500" size={28} />
                 </div>
 
-                <div className="grid sm:grid-cols-3 gap-4">
+                <div className="grid gap-4 sm:grid-cols-3">
                   {recentAchievements.map((achievement) => (
                     <div 
                       key={achievement.id}
-                      className="flex flex-col items-center text-center p-4 rounded-xl border-2 border-gray-200 hover:border-amber-500 hover:shadow-md transition-all cursor-pointer group"
+                      className="flex flex-col items-center p-4 text-center transition-all border-2 border-gray-200 cursor-pointer rounded-xl hover:border-amber-500 hover:shadow-md group"
                     >
                       <div className={`${achievement.color} p-4 rounded-full text-white mb-3 group-hover:scale-110 transition-transform`}>
                         {achievement.icon}
                       </div>
-                      <h4 className="font-bold text-gray-900 text-sm mb-1">{achievement.title}</h4>
+                      <h4 className="mb-1 text-sm font-bold text-gray-900">{achievement.title}</h4>
                       <p className="text-xs text-gray-600">{achievement.description}</p>
                     </div>
                   ))}
@@ -277,7 +279,7 @@ export function Dashboard() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="bg-white rounded-xl p-6 border-2 border-gray-200 shadow-sm"
+                className="p-6 bg-white border-2 border-gray-200 shadow-sm rounded-xl"
               >
                 <div className="flex items-center gap-2 mb-6">
                   <Calendar className="text-blue-600" size={24} />
@@ -288,27 +290,27 @@ export function Dashboard() {
                   {upcomingSessions.map((session) => (
                     <div 
                       key={session.id}
-                      className="p-4 rounded-xl bg-blue-50 border-2 border-blue-200 hover:border-blue-600 hover:shadow-md transition-all cursor-pointer"
+                      className="p-4 transition-all border-2 border-blue-200 cursor-pointer rounded-xl bg-blue-50 hover:border-blue-600 hover:shadow-md"
                     >
                       <div className="flex items-start gap-3 mb-3">
-                        <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white flex-shrink-0">
+                        <div className="flex items-center justify-center flex-shrink-0 w-10 h-10 text-white bg-blue-600 rounded-lg">
                           <Video size={20} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-bold text-gray-900 text-sm mb-1 line-clamp-2">
+                          <h4 className="mb-1 text-sm font-bold text-gray-900 line-clamp-2">
                             {session.title}
                           </h4>
-                          <p className="text-xs text-gray-600 mb-2">{session.course}</p>
+                          <p className="mb-2 text-xs text-gray-600">{session.course}</p>
                         </div>
                       </div>
                       <div className="flex items-center justify-between text-xs">
-                        <span className="text-gray-700 font-semibold flex items-center gap-1">
+                        <span className="flex items-center gap-1 font-semibold text-gray-700">
                           <Clock size={14} />
                           {session.time}
                         </span>
                         <span className="text-gray-600">{session.duration}</span>
                       </div>
-                      <button className="w-full mt-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm transition-colors">
+                      <button className="w-full py-2 mt-3 text-sm font-semibold text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700">
                         Join Session
                       </button>
                     </div>
@@ -321,14 +323,14 @@ export function Dashboard() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
-                className="bg-white rounded-xl p-6 border-2 border-gray-200 shadow-sm"
+                className="p-6 bg-white border-2 border-gray-200 shadow-sm rounded-xl"
               >
-                <h3 className="text-xl font-bold text-gray-900 mb-4">This Week</h3>
+                <h3 className="mb-4 text-xl font-bold text-gray-900">This Week</h3>
                 
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                      <div className="flex items-center justify-center w-10 h-10 bg-green-100 rounded-lg">
                         <CheckCircle className="text-green-600" size={20} />
                       </div>
                       <span className="text-sm font-semibold text-gray-700">Lessons Completed</span>
@@ -338,7 +340,7 @@ export function Dashboard() {
 
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                      <div className="flex items-center justify-center w-10 h-10 bg-purple-100 rounded-lg">
                         <FileText className="text-purple-600" size={20} />
                       </div>
                       <span className="text-sm font-semibold text-gray-700">Assignments Done</span>
@@ -348,7 +350,7 @@ export function Dashboard() {
 
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <div className="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-lg">
                         <Star className="text-blue-600" size={20} />
                       </div>
                       <span className="text-sm font-semibold text-gray-700">Average Score</span>

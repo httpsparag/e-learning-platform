@@ -5,3 +5,4 @@ export { LiveClass } from './LiveClass';
 export { Dashboard } from './Dashboard';
 export { Payment } from './Payment';
 export { Profile } from './Profile';
+export { Enrollment } from './Enrollment';
