@@ -5,9 +5,11 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { FloatingNavbar } from "../../components/layout/FloatingNavbar";
+import { useAuth } from "../../context/AuthContext";
 
 export function CourseDetail() {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   return (
     <>
@@ -140,9 +142,20 @@ export function CourseDetail() {
 
                     {/* CTA Buttons */}
                     <button 
-                      onClick={() => navigate("/payment")}
+                      onClick={() => {
+                        if (!isAuthenticated) {
+                          navigate("/auth/signup", {
+                            state: {
+                              redirectAfterAuth: "/enrollment/course-id",
+                              message: "Please sign up to enroll in this course",
+                            },
+                          });
+                        } else {
+                          navigate("/enrollment/course-id");
+                        }
+                      }}
                       className="w-full mb-3 py-4 px-6 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 transition-all duration-300 shadow-md hover:shadow-lg text-lg">
-                      Enroll Now
+                      {isAuthenticated ? "Enroll Now" : "Sign Up to Enroll"}
                     </button>
 
                     <button className="w-full py-4 px-6 rounded-xl font-semibold text-blue-600 border-2 border-blue-600 hover:bg-blue-50 transition-colors duration-300">
