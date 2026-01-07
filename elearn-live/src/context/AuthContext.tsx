@@ -39,7 +39,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const response = await authService.getMe();
           if (response.success && response.data) {
             const userData = response.data.user || response.data;
-            setUser(userData);
+            // Map _id to id for consistency
+            const user: User = {
+              id: userData._id || userData.id,
+              name: userData.name,
+              email: userData.email,
+              role: userData.role,
+              avatar: userData.avatar,
+            };
+            setUser(user);
             setIsAuthenticated(true);
           }
         } catch (error) {
@@ -64,7 +72,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const response = await authService.getMe();
           if (response.success && response.data) {
             const userData = response.data.user || response.data;
-            setUser(userData);
+            // Map _id to id for consistency
+            const user: User = {
+              id: userData._id || userData.id,
+              name: userData.name,
+              email: userData.email,
+              role: userData.role,
+              avatar: userData.avatar,
+            };
+            setUser(user);
             setIsAuthenticated(true);
           }
         } catch (error) {
@@ -172,7 +188,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const response = await authService.getMe();
       if (response.success && response.data) {
-        setUser(response.data);
+        const userData = response.data.user || response.data;
+        // Map _id to id for consistency
+        const user: User = {
+          id: userData._id || userData.id,
+          name: userData.name,
+          email: userData.email,
+          role: userData.role,
+          avatar: userData.avatar,
+        };
+        setUser(user);
         setIsAuthenticated(true);
       }
       return response;

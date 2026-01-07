@@ -4,6 +4,7 @@ import redisClient from '../../config/redis';
 import { sendEmail, getVerificationEmailTemplate, getPasswordResetEmailTemplate } from '../../utils/email';
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../../utils/jwt';
 import { validatePassword } from '../../utils/password';
+import ProfileService from '../profile/profile.service';
 import {
   RegisterDTO,
   LoginDTO,
@@ -43,6 +44,9 @@ export class AuthService {
       role: 'user',
       isEmailVerified: false,
     });
+
+    // Create user profile
+    await ProfileService.createUserProfile(user._id.toString());
 
     // Generate OTP (6 digits)
     const otp = crypto.randomInt(100000, 999999).toString();

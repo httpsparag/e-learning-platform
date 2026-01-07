@@ -3,35 +3,69 @@ import {
   User, Mail, Phone, MapPin, Calendar, Camera, 
   Edit3, Save, X, Lock, Bell, CreditCard, 
   Award, BookOpen, Clock, Settings, Shield,
-  Globe, Briefcase, Linkedin, Github, Twitter,
-  Check
+  Globe, Briefcase, Linkedin, Github, Twitter
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FloatingNavbar } from "../../components/layout/FloatingNavbar";
 import { useAuth } from "../../context/AuthContext";
+import { useToast } from "../../context/ToastContext";
+import profileService, { type UserProfile } from "../../services/profile.service";
 
 export function Profile() {
   const { user } = useAuth();
+  const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState("profile");
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [profileData, setProfileData] = useState<UserProfile>({
+    _id: '',
+    userId: '',
+    phone: '',
+    location: '',
+    bio: '',
+    profession: '',
+    company: '',
+    socialLinks: {
+      linkedin: '',
+      github: '',
+      twitter: '',
+    },
+    avatar: '',
+    createdAt: '',
+    updatedAt: '',
+  });
 
-  // Mock user data with fallback to auth context
-  const userData = {
-    name: user?.name ,
-    email: user?.email ,
-    phone: "+91 98765 43210",
-    location: "Pimpri, Maharashtra, India",
-    bio: "Full-stack developer passionate about React and TypeScript. Currently learning advanced web development patterns.",
-    joined: "January 2024",
-    avatar: "https://i.pravatar.cc/200?img=2",
-    profession: "Software Developer",
-    company: "Tech Solutions Inc.",
-    social: {
-      linkedin: "alexkumar",
-      github: "alexkumar",
-      twitter: "@alexkumar"
-    }
-  };
+  // Load profile data on mount
+  useEffect(() => {
+    const loadProfileData = async () => {
+      if (!user?.id) {
+        console.log('No user ID available');
+        return;
+      }
+      
+      try {
+        console.log('Loading profile for user:', user?.id);
+        const response = await profileService.getProfile();
+        console.log('Profile response:', response);
+        
+        if (response.success && response.data) {
+          console.log('Setting profile data:', response.data);
+          console.log('Avatar loaded, length:', response.data.avatar?.length || 0);
+          if (response.data.avatar) {
+            console.log('Avatar preview (first 100 chars):', response.data.avatar.substring(0, 100));
+          }
+          setProfileData(response.data);
+        } else {
+          console.warn('Profile fetch failed:', response.message);
+        }
+      } catch (error) {
+        console.error('Failed to load profile:', error);
+      }
+    };
+
+    loadProfileData();
+  }, [user?.id]);
 
   const stats = [
     { label: "Courses Enrolled", value: "15", icon: <BookOpen size={20} />, color: "text-blue-600", bg: "bg-blue-50" },
@@ -60,6 +94,148 @@ export function Profile() {
       thumbnail: "https://images.unsplash.com/photo-1579468118864-1b9ea3c0db4a?w=200&q=80"
     }
   ];
+
+  // Handle profile field changes
+  const handleProfileChange = (field: string, value: string) => {
+    setProfileData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  // Handle avatar upload - Auto save
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    console.log('Avatar file selected:', file.name, 'Size:', file.size, 'Type:', file.type);
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      console.error('Invalid file type:', file.type);
+      showToast('Please select an image file', 'error', 4000);
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      console.error('File too large:', file.size);
+      showToast('Image size must be less than 5MB', 'error', 4000);
+      return;
+    }
+
+    try {
+      setIsUploadingAvatar(true);
+      showToast('Uploading avatar...', 'info', 2000);
+      
+      // Convert file to base64
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const base64 = event.target?.result as string;
+        console.log('Avatar converted to base64, length:', base64.length);
+        
+        // Show preview immediately
+        setProfileData((prev) => ({
+          ...prev,
+          avatar: base64,
+        }));
+
+        // Auto-save to database
+        try {
+          console.log('Auto-saving avatar to database...');
+          const response = await profileService.updateProfile({
+            phone: profileData.phone,
+            location: profileData.location,
+            bio: profileData.bio,
+            profession: profileData.profession,
+            company: profileData.company,
+            socialLinks: profileData.socialLinks,
+            avatar: base64,
+          });
+
+          if (response.success) {
+            console.log('Avatar saved successfully:', response.data);
+            setProfileData(response.data);
+            showToast('✨ Avatar updated successfully!', 'success', 3000);
+          } else {
+            showToast('Failed to save avatar: ' + response.message, 'error', 4000);
+          }
+        } catch (saveError) {
+          console.error('Error saving avatar:', saveError);
+          showToast('Error saving avatar to database', 'error', 4000);
+        } finally {
+          setIsUploadingAvatar(false);
+        }
+      };
+      
+      reader.onerror = () => {
+        console.error('FileReader error');
+        showToast('Failed to read file', 'error', 4000);
+        setIsUploadingAvatar(false);
+      };
+      
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Error reading file:', error);
+      showToast('Failed to process image', 'error', 4000);
+      setIsUploadingAvatar(false);
+    }
+  };
+
+  // Handle social links changes
+  const handleSocialChange = (platform: string, value: string) => {
+    setProfileData((prev) => ({
+      ...prev,
+      socialLinks: {
+        ...prev.socialLinks,
+        [platform]: value,
+      },
+    }));
+  };
+
+  // Save profile changes
+  const handleSaveProfile = async () => {
+    setIsSaving(true);
+    try {
+      console.log('Saving profile with avatar length:', profileData.avatar?.length || 0);
+      const response = await profileService.updateProfile({
+        phone: profileData.phone,
+        location: profileData.location,
+        bio: profileData.bio,
+        profession: profileData.profession,
+        company: profileData.company,
+        socialLinks: profileData.socialLinks,
+        avatar: profileData.avatar,
+      });
+
+      if (response.success) {
+        console.log('Profile saved successfully:', response.data);
+        console.log('Avatar saved, length:', response.data.avatar?.length || 0);
+        setProfileData(response.data);
+        setIsEditing(false);
+        showToast('✨ Profile updated successfully!', 'success', 4000);
+        
+        // Reload profile data to ensure it's fresh
+        try {
+          const refreshResponse = await profileService.getProfile();
+          if (refreshResponse.success && refreshResponse.data) {
+            console.log('Profile reloaded after save:', refreshResponse.data);
+            console.log('Avatar reloaded, length:', refreshResponse.data.avatar?.length || 0);
+            setProfileData(refreshResponse.data);
+          }
+        } catch (refreshError) {
+          console.error('Failed to refresh profile:', refreshError);
+        }
+      } else {
+        showToast('Failed to update profile: ' + response.message, 'error', 4000);
+      }
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      showToast('An error occurred while saving your profile', 'error', 4000);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const tabs = [
     { id: "profile", label: "Profile", icon: <User size={18} /> },
@@ -101,24 +277,46 @@ export function Profile() {
               {/* Profile Card */}
               <div className="p-6 bg-white border-2 border-gray-200 shadow-sm rounded-xl">
                 {/* Avatar */}
-                <div className="relative w-32 h-32 mx-auto mb-4">
+                <div className="relative w-32 h-32 mx-auto mb-4 group">
                   <img 
-                    src={userData.avatar} 
-                    alt={userData.name}
-                    className="w-full h-full border-4 border-gray-100 rounded-full"
+                    src={
+                      profileData.avatar && profileData.avatar.length > 0
+                        ? profileData.avatar 
+                        : `https://i.pravatar.cc/200?u=${user?.email}`
+                    }
+                    alt={user?.name}
+                    className="w-full h-full border-4 border-gray-100 rounded-full object-cover"
+                    onError={(e) => {
+                      console.log('Avatar image error, using fallback');
+                      (e.target as HTMLImageElement).src = `https://i.pravatar.cc/200?u=${user?.email}`;
+                    }}
                   />
-                  <button className="absolute bottom-0 right-0 p-2 text-white transition-colors bg-blue-600 rounded-full shadow-lg hover:bg-blue-700">
-                    <Camera size={16} />
-                  </button>
+                  <input
+                    type="file"
+                    id="avatar-upload"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                    disabled={isUploadingAvatar}
+                    className="hidden"
+                  />
+                  <label htmlFor="avatar-upload" className={`absolute bottom-0 right-0 p-2 text-white rounded-full shadow-lg cursor-pointer transition-all ${isUploadingAvatar ? 'bg-gray-500 opacity-60' : 'bg-blue-600 hover:bg-blue-700'}`}>
+                    {isUploadingAvatar ? (
+                      <div className="animate-spin">
+                        <Camera size={16} />
+                      </div>
+                    ) : (
+                      <Camera size={16} />
+                    )}
+                  </label>
                 </div>
 
                 {/* User Info */}
                 <div className="mb-6 text-center">
-                  <h2 className="mb-1 text-xl font-bold text-gray-900">{userData.name}</h2>
-                  <p className="mb-3 text-sm text-gray-600">{userData.profession}</p>
+                  <h2 className="mb-1 text-xl font-bold text-gray-900">{user?.name}</h2>
+                  <p className="mb-3 text-sm text-gray-600">{profileData.profession || 'No profession set'}</p>
                   <div className="flex items-center justify-center gap-1 text-xs text-gray-500">
                     <Calendar size={14} />
-                    <span>Joined {userData.joined}</span>
+                    <span>Joined {new Date(profileData.createdAt || new Date()).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}</span>
                   </div>
                 </div>
 
@@ -186,11 +384,12 @@ export function Profile() {
                     ) : (
                       <div className="flex gap-2">
                         <button 
-                          onClick={() => setIsEditing(false)}
-                          className="flex items-center gap-2 px-4 py-2 font-semibold text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700"
+                          onClick={handleSaveProfile}
+                          disabled={isSaving}
+                          className="flex items-center gap-2 px-4 py-2 font-semibold text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
                         >
                           <Save size={16} />
-                          Save
+                          {isSaving ? 'Saving...' : 'Save'}
                         </button>
                         <button 
                           onClick={() => setIsEditing(false)}
@@ -213,8 +412,8 @@ export function Profile() {
                           <User className="absolute text-gray-400 -translate-y-1/2 left-3 top-1/2" size={18} />
                           <input
                             type="text"
-                            value={userData.name}
-                            disabled={!isEditing}
+                            value={user?.name || ''}
+                            disabled
                             className="w-full py-3 pl-10 pr-4 text-gray-900 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-600 disabled:bg-gray-50 disabled:text-gray-600"
                           />
                         </div>
@@ -227,8 +426,8 @@ export function Profile() {
                           <Mail className="absolute text-gray-400 -translate-y-1/2 left-3 top-1/2" size={18} />
                           <input
                             type="email"
-                            value={userData.email}
-                            disabled={!isEditing}
+                            value={user?.email || ''}
+                            disabled
                             className="w-full py-3 pl-10 pr-4 text-gray-900 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-600 disabled:bg-gray-50 disabled:text-gray-600"
                           />
                         </div>
@@ -244,8 +443,10 @@ export function Profile() {
                           <Phone className="absolute text-gray-400 -translate-y-1/2 left-3 top-1/2" size={18} />
                           <input
                             type="tel"
-                            value={userData.phone}
+                            value={profileData.phone || ''}
+                            onChange={(e) => handleProfileChange('phone', e.target.value)}
                             disabled={!isEditing}
+                            placeholder="Add your phone number"
                             className="w-full py-3 pl-10 pr-4 text-gray-900 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-600 disabled:bg-gray-50 disabled:text-gray-600"
                           />
                         </div>
@@ -258,8 +459,10 @@ export function Profile() {
                           <MapPin className="absolute text-gray-400 -translate-y-1/2 left-3 top-1/2" size={18} />
                           <input
                             type="text"
-                            value={userData.location}
+                            value={profileData.location || ''}
+                            onChange={(e) => handleProfileChange('location', e.target.value)}
                             disabled={!isEditing}
+                            placeholder="Add your location"
                             className="w-full py-3 pl-10 pr-4 text-gray-900 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-600 disabled:bg-gray-50 disabled:text-gray-600"
                           />
                         </div>
@@ -271,8 +474,10 @@ export function Profile() {
                         Bio
                       </label>
                       <textarea
-                        value={userData.bio}
+                        value={profileData.bio || ''}
+                        onChange={(e) => handleProfileChange('bio', e.target.value)}
                         disabled={!isEditing}
+                        placeholder="Add a bio about yourself"
                         rows={4}
                         className="w-full px-4 py-3 text-gray-900 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-600 disabled:bg-gray-50 disabled:text-gray-600"
                       />
@@ -287,8 +492,10 @@ export function Profile() {
                           <Briefcase className="absolute text-gray-400 -translate-y-1/2 left-3 top-1/2" size={18} />
                           <input
                             type="text"
-                            value={userData.profession}
+                            value={profileData.profession || ''}
+                            onChange={(e) => handleProfileChange('profession', e.target.value)}
                             disabled={!isEditing}
+                            placeholder="Your profession"
                             className="w-full py-3 pl-10 pr-4 text-gray-900 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-600 disabled:bg-gray-50 disabled:text-gray-600"
                           />
                         </div>
@@ -301,8 +508,10 @@ export function Profile() {
                           <Briefcase className="absolute text-gray-400 -translate-y-1/2 left-3 top-1/2" size={18} />
                           <input
                             type="text"
-                            value={userData.company}
+                            value={profileData.company || ''}
+                            onChange={(e) => handleProfileChange('company', e.target.value)}
                             disabled={!isEditing}
+                            placeholder="Your company"
                             className="w-full py-3 pl-10 pr-4 text-gray-900 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-600 disabled:bg-gray-50 disabled:text-gray-600"
                           />
                         </div>
@@ -318,7 +527,9 @@ export function Profile() {
                           <Linkedin className="absolute text-gray-400 -translate-y-1/2 left-3 top-1/2" size={18} />
                           <input
                             type="text"
-                            placeholder="LinkedIn"
+                            placeholder="LinkedIn username"
+                            value={profileData.socialLinks?.linkedin || ''}
+                            onChange={(e) => handleSocialChange('linkedin', e.target.value)}
                             disabled={!isEditing}
                             className="w-full py-3 pl-10 pr-4 text-gray-900 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-600 disabled:bg-gray-50"
                           />
@@ -327,7 +538,9 @@ export function Profile() {
                           <Github className="absolute text-gray-400 -translate-y-1/2 left-3 top-1/2" size={18} />
                           <input
                             type="text"
-                            placeholder="GitHub"
+                            placeholder="GitHub username"
+                            value={profileData.socialLinks?.github || ''}
+                            onChange={(e) => handleSocialChange('github', e.target.value)}
                             disabled={!isEditing}
                             className="w-full py-3 pl-10 pr-4 text-gray-900 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-600 disabled:bg-gray-50"
                           />
@@ -336,7 +549,9 @@ export function Profile() {
                           <Twitter className="absolute text-gray-400 -translate-y-1/2 left-3 top-1/2" size={18} />
                           <input
                             type="text"
-                            placeholder="Twitter"
+                            placeholder="Twitter username"
+                            value={profileData.socialLinks?.twitter || ''}
+                            onChange={(e) => handleSocialChange('twitter', e.target.value)}
                             disabled={!isEditing}
                             className="w-full py-3 pl-10 pr-4 text-gray-900 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-600 disabled:bg-gray-50"
                           />
@@ -411,7 +626,7 @@ export function Profile() {
                         <h3 className="mb-2 text-lg font-bold text-gray-900">Two-Factor Authentication</h3>
                         <p className="mb-4 text-sm text-gray-600">Add an extra layer of security to your account by enabling two-factor authentication.</p>
                       </div>
-                      <button className="flex-shrink-0 px-4 py-2 ml-4 text-sm font-semibold text-white transition-colors bg-green-600 rounded-lg hover:bg-green-700">
+                      <button className="shrink-0 px-4 py-2 ml-4 text-sm font-semibold text-white transition-colors bg-green-600 rounded-lg hover:bg-green-700">
                         Enable 2FA
                       </button>
                     </div>
@@ -464,7 +679,7 @@ export function Profile() {
                         </div>
                         <label className="relative inline-flex items-center ml-4 cursor-pointer">
                           <input type="checkbox" className="sr-only peer" defaultChecked={item.enabled} />
-                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                         </label>
                       </div>
                     ))}
