@@ -3,6 +3,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import authRoutes from './modules/auth/auth.routes';
 import profileRoutes from './modules/profile/profile.routes';
+import courseRoutes from './modules/course/course.routes';
 import { errorHandler } from './middlewares/error.middleware';
 
 const app: Application = express();
@@ -28,6 +29,7 @@ app.get('/health', (req, res) => {
 
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/courses', courseRoutes);
 app.use('/api', profileRoutes);
 
 // 404 handler

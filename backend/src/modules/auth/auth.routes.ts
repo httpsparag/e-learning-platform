@@ -3,6 +3,7 @@ import { body } from 'express-validator';
 import { AuthController } from './auth.controller';
 import { authenticate } from '../../middlewares/auth.middleware';
 import { validate } from '../../middlewares/validator.middleware';
+import instructorAuthRoutes from './instructor-auth.routes';
 
 const router = Router();
 const authController = new AuthController();
@@ -133,5 +134,8 @@ router.post(
 
 // GET /api/auth/me (Protected)
 router.get('/me', authenticate, authController.getMe.bind(authController));
+
+// Instructor Auth Routes
+router.use('/', instructorAuthRoutes);
 
 export default router;

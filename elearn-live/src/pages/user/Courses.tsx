@@ -3,13 +3,15 @@ import {
   Star, Users, Clock, Search, Sparkles, 
   Code2, Layout, Terminal, Zap, CheckCircle2 
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FloatingNavbar } from "../../components/layout/FloatingNavbar";
+import CourseService from "../../services/course.service";
+import type { Course as APICourse } from "../../services/course.service";
 
 // --- Types & Data ---
 interface Course {
-  id: number;
+  id: string;
   title: string;
   description: string;
   price: number;
@@ -27,113 +29,27 @@ interface Course {
   badge?: string;
 }
 
-const courses: Course[] = [
-  {
-    id: 1,
-    title: "Advanced React & TypeScript Mastery",
-    description: "Master modern React patterns, hooks, and TypeScript for production-grade applications.",
-    price: 99,
+// Function to convert API courses to display format
+const convertAPICourseToDisplay = (apiCourse: APICourse): Course => {
+  return {
+    id: apiCourse._id,
+    title: apiCourse.title,
+    description: apiCourse.description,
+    price: apiCourse.revenue > 0 ? Math.round(apiCourse.revenue / apiCourse.enrolledCount) : 99,
     originalPrice: 199,
-    image: "https://images.unsplash.com/photo-1633356122544-f134324ef6db?w=800&q=80",
-    instructor: "Sarah Chen",
-    instructorImage: "https://i.pravatar.cc/100?img=1",
-    rating: 4.9,
-    reviews: 2847,
-    students: 45230,
-    duration: "32 hours",
-    lessons: 156,
-    level: "Advanced",
-    category: "Web Development",
-    badge: "Bestseller"
-  },
-  {
-    id: 2,
-    title: "Full-Stack Web Development with Node.js",
-    description: "Build scalable web applications from frontend to backend with Node.js and React.",
-    price: 119,
-    originalPrice: 249,
-    image: "https://images.unsplash.com/photo-1629904853716-6b03184ec0a5?w=800&q=80",
-    instructor: "James Wilson",
-    instructorImage: "https://i.pravatar.cc/100?img=2",
-    rating: 4.8,
-    reviews: 1923,
-    students: 32156,
-    duration: "48 hours",
-    lessons: 234,
-    level: "Intermediate",
-    category: "Web Development",
-    badge: "New"
-  },
-  {
-    id: 3,
-    title: "JavaScript ES6+ Complete Guide",
-    description: "From basics to advanced JavaScript concepts with modern ES6+ syntax.",
-    price: 79,
-    originalPrice: 159,
-    image: "https://images.unsplash.com/photo-1579468118864-1b9ea3c0db4a?w=800&q=80",
-    instructor: "Mike Johnson",
-    instructorImage: "https://i.pravatar.cc/100?img=3",
-    rating: 4.7,
-    reviews: 3421,
-    students: 67890,
-    duration: "28 hours",
-    lessons: 128,
-    level: "Beginner",
-    category: "Programming"
-  },
-  {
-    id: 4,
-    title: "Next.js 14 Complete Course",
-    description: "Build modern full-stack applications with Next.js 14, App Router, and Server Components.",
-    price: 109,
-    originalPrice: 229,
-    image: "https://images.unsplash.com/photo-1618477388954-7852f32655ec?w=800&q=80",
-    instructor: "Emily Rodriguez",
-    instructorImage: "https://i.pravatar.cc/100?img=4",
-    rating: 4.9,
-    reviews: 1654,
-    students: 28450,
-    duration: "40 hours",
-    lessons: 198,
-    level: "Advanced",
-    category: "Web Development",
-    badge: "Trending"
-  },
-  {
-    id: 5,
-    title: "CSS Grid & Flexbox Mastery",
-    description: "Create responsive, modern layouts with CSS Grid and Flexbox techniques.",
-    price: 69,
-    originalPrice: 139,
-    image: "https://images.unsplash.com/photo-1507721999472-8ed4421c4af2?w=800&q=80",
-    instructor: "David Brown",
-    instructorImage: "https://i.pravatar.cc/100?img=5",
-    rating: 4.8,
-    reviews: 2165,
-    students: 41230,
-    duration: "22 hours",
-    lessons: 96,
-    level: "Beginner",
-    category: "Web Design"
-  },
-  {
-    id: 6,
-    title: "Vue.js 3 & Composition API",
-    description: "Master Vue.js 3 with the modern Composition API for building reactive web apps.",
-    price: 89,
-    originalPrice: 179,
-    image: "https://images.unsplash.com/photo-1555099962-4199c345e5dd?w=800&q=80",
-    instructor: "Lisa Park",
-    instructorImage: "https://i.pravatar.cc/100?img=6",
-    rating: 4.7,
-    reviews: 987,
-    students: 19800,
-    duration: "36 hours",
-    lessons: 165,
-    level: "Intermediate",
-    category: "Web Development"
-  }
-];
+    image: "https://images.unsplash.com/photo-1633356122544-f134324ef6db?w=800&q=80", // Placeholder image
+    instructor: apiCourse.instructorName,
+    instructorImage: `https://i.pravatar.cc/100?u=${apiCourse.instructorName}`, // Generate avatar from name
+    rating: apiCourse.rating,
+    reviews: apiCourse.reviewCount,
+    students: apiCourse.enrolledCount,
+    duration: "32 hours", // Placeholder
+    lessons: 156, // Placeholder
+    level: apiCourse.level as "Beginner" | "Intermediate" | "Advanced",
+    category: "Web Development", // Default category
+    badge: apiCourse.status === "Active" ? "Active" : undefined,
+  };
+};
 
 // --- Utility Components ---
 const Badge = ({ children, type }: { children: React.ReactNode; type: "level" | "badge" }) => {
@@ -152,15 +68,53 @@ export function Courses() {
   const navigate = useNavigate();
   const [filter, setFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [displayCourses, setDisplayCourses] = useState<Course[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const filteredCourses = courses.filter(course => {
+  // Fetch courses from API on mount
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        setIsLoading(true);
+        setError("");
+        const apiCourses = await CourseService.getAllCourses();
+        const convertedCourses = apiCourses.map(convertAPICourseToDisplay);
+        setDisplayCourses(convertedCourses);
+      } catch (err: any) {
+        setError(err.message || "Failed to load courses");
+        setDisplayCourses([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCourses();
+  }, []);
+
+  const filteredCourses = displayCourses.filter(course => {
     const matchesFilter = filter === "all" || course.category === filter;
     const matchesSearch = course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           course.instructor.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesFilter && matchesSearch;
   });
 
-  const categories = ["all", ...new Set(courses.map(c => c.category))];
+  const categories = ["all", ...new Set(displayCourses.map(c => c.category))];
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <>
+        <FloatingNavbar />
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-12 h-12 border-b-2 border-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading courses...</p>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
@@ -212,6 +166,18 @@ export function Courses() {
               </div>
             </motion.div>
           </div>
+
+          {/* Error Message */}
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-8 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 flex items-center gap-3"
+            >
+              <span>⚠️</span>
+              <span>{error}</span>
+            </motion.div>
+          )}
 
           {/* Filter Tabs */}
           <div className="flex flex-wrap gap-3 mb-12">

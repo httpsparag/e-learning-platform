@@ -2,12 +2,14 @@ import { Request, Response, NextFunction } from 'express';
 import { verifyAccessToken } from '../utils/jwt';
 import { sendError } from '../utils/response';
 import { User } from '../models/user.model';
+import { Instructor } from '../models/instructor.model';
 
 export interface AuthRequest extends Request {
   user?: {
     userId: string;
     role: string;
   };
+  instructorId?: string;
 }
 
 export const authenticate = async (
@@ -36,8 +38,13 @@ export const authenticate = async (
       return sendError(res, 403, 'Please verify your email first');
     }
 
+    const userId = decoded.userId || decoded.id;
+    if (!userId) {
+      return sendError(res, 401, 'Invalid token: missing user ID');
+    }
+
     req.user = {
-      userId: decoded.userId,
+      userId,
       role: decoded.role,
     };
 
@@ -60,4 +67,49 @@ export const authorize = (...roles: string[]) => {
     }
     next();
   };
+};
+
+export const instructorAuth = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return sendError(res, 401, 'No token provided');
+    }
+
+    const token = authHeader.split(' ')[1];
+
+    const decoded = verifyAccessToken(token);
+
+    // Verify instructor still exists (handle both id and userId fields)
+    const instructorId = decoded.id || decoded.userId;
+    const instructor = await Instructor.findById(instructorId);
+    if (!instructor) {
+      return sendError(res, 401, 'Instructor no longer exists');
+    }
+
+    if (!instructor.isEmailVerified) {
+      return sendError(res, 403, 'Please verify your email first');
+    }
+
+    if (instructor.status !== 'active') {
+      return sendError(res, 403, 'Instructor account is inactive or suspended');
+    }
+
+    req.instructorId = instructorId;
+
+    next();
+  } catch (error: any) {
+    if (error.name === 'TokenExpiredError') {
+      return sendError(res, 401, 'Token expired');
+    }
+    if (error.name === 'JsonWebTokenError') {
+      return sendError(res, 401, 'Invalid token');
+    }
+    return sendError(res, 500, 'Authentication failed');
+  }
 };

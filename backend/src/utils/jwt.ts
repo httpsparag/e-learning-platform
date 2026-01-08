@@ -1,7 +1,8 @@
 import jwt from 'jsonwebtoken';
 
-interface JWTPayload {
-  userId: string;
+export interface JWTPayload {
+  userId?: string;
+  id?: string;
   role: string;
 }
 

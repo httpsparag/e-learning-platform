@@ -10,6 +10,22 @@ const PORT = process.env.PORT || 5000;
 // Connect to database
 connectDB();
 
+// Check Cloudinary Configuration
+const checkCloudinary = () => {
+  const cloudinaryCloudName = process.env.CLOUDINARY_CLOUD_NAME;
+  const cloudinaryApiKey = process.env.CLOUDINARY_API_KEY;
+  const cloudinaryUploadPreset = process.env.CLOUDINARY_UPLOAD_PRESET;
+  
+  if (cloudinaryCloudName && cloudinaryApiKey && cloudinaryUploadPreset) {
+    console.log(`☁️  CLOUDINARY: ✓ RUNNING (Cloud: ${cloudinaryCloudName})`);
+  } else {
+    console.log(`☁️  CLOUDINARY: ✗ NOT CONFIGURED - Missing env variables`);
+    console.log(`   Required: CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_UPLOAD_PRESET`);
+  }
+};
+
+checkCloudinary();
+
 // Start server
 const server = app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
