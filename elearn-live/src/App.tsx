@@ -135,7 +135,6 @@ function App() {
                 </ProtectedInstructorRoute>
               }
             />
-
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

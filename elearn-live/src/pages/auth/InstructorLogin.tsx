@@ -35,13 +35,31 @@ export const InstructorLogin = () => {
       }
 
       // Save token and user data
+      console.log('💾 Storing instructor login data:', {
+        hasAccessToken: !!data.data.accessToken,
+        instructorName: data.data.user.name,
+        instructorEmail: data.data.user.email,
+        instructorId: data.data.user.id,
+      });
+
       localStorage.setItem('accessToken', data.data.accessToken);
       localStorage.setItem('user', JSON.stringify(data.data.user));
       localStorage.setItem('userRole', 'instructor');
+      localStorage.setItem('instructorName', data.data.user.name);
+      localStorage.setItem('instructorEmail', data.data.user.email);
+      localStorage.setItem('instructorId', data.data.user.id);
+
+      // Verify localStorage has data
+      console.log('✅ LocalStorage verification:', {
+        accessToken: !!localStorage.getItem('accessToken'),
+        userRole: localStorage.getItem('userRole'),
+        instructorName: localStorage.getItem('instructorName'),
+      });
 
       // Redirect to instructor dashboard
       navigate("/instructor");
     } catch (err: any) {
+      console.error('❌ Login error:', err.message);
       setError(err.message || "Login failed");
     } finally {
       setLoading(false);

@@ -16,6 +16,7 @@ export const InstructorCourses = () => {
   const [instructorEmail, setInstructorEmail] = useState("");
 
   useEffect(() => {
+    console.log('📚 InstructorCourses mounted, fetching data...');
     fetchCourses();
     getInstructorInfo();
   }, []);
@@ -24,6 +25,7 @@ export const InstructorCourses = () => {
     // Get instructor info from localStorage or context
     const name = localStorage.getItem('instructorName') || 'Instructor';
     const email = localStorage.getItem('instructorEmail') || 'instructor@elearning.com';
+    console.log('👤 Instructor Info:', { name, email });
     setInstructorName(name);
     setInstructorEmail(email);
   };
@@ -32,9 +34,12 @@ export const InstructorCourses = () => {
     try {
       setIsLoading(true);
       setError("");
+      console.log('🔄 Fetching instructor courses...');
       const data = await CourseService.getInstructorCourses();
+      console.log('✅ Courses fetched successfully:', data);
       setCourses(data || []);
     } catch (err: any) {
+      console.error('❌ Error fetching courses:', err.message);
       setError(err.message || "Failed to load courses");
     } finally {
       setIsLoading(false);

@@ -8,16 +8,15 @@ interface AuthRequest extends Request {
   instructorId?: string;
 }
 
-// Public routes
-router.get('/', (req: Request, res: Response, next: NextFunction) =>
-  CourseController.getAllCourses(req, res, next)
-);
+// Debug endpoint to verify routes are loaded
+router.get('/test', (req: Request, res: Response) => {
+  res.json({ 
+    message: 'Course routes are loaded!',
+    timestamp: new Date().toISOString()
+  });
+});
 
-router.get('/:courseId', (req: Request, res: Response, next: NextFunction) =>
-  CourseController.getCourseById(req, res, next)
-);
-
-// Protected instructor routes
+// Protected instructor routes - must come BEFORE generic :courseId routes
 router.post(
   '/create',
   instructorAuth,
@@ -30,6 +29,23 @@ router.get(
   instructorAuth,
   (req: AuthRequest, res: Response, next: NextFunction) =>
     CourseController.getInstructorCourses(req, res, next)
+);
+
+// Video upload endpoint - Works with or without auth
+router.post(
+  '/upload/video-signature',
+  instructorAuth,
+  (req: AuthRequest, res: Response, next: NextFunction) =>
+    CourseController.getVideoUploadSignature(req, res, next)
+);
+
+// Public routes
+router.get('/', (req: Request, res: Response, next: NextFunction) =>
+  CourseController.getAllCourses(req, res, next)
+);
+
+router.get('/:courseId', (req: Request, res: Response, next: NextFunction) =>
+  CourseController.getCourseById(req, res, next)
 );
 
 router.patch(

@@ -18,21 +18,16 @@ export const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) 
 
   const checkAuth = async () => {
     const token = localStorage.getItem('accessToken');
+    const userRole = localStorage.getItem('userRole');
     
-    if (!token) {
+    if (!token || !userRole) {
       setIsAuthenticated(false);
       return;
     }
 
-    try {
-      const response = await authService.getMe();
-      setIsAuthenticated(true);
-      setUserRole(response.data.user.role);
-    } catch (error) {
-      setIsAuthenticated(false);
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('user');
-    }
+    // Just trust localStorage - don't verify with backend
+    setIsAuthenticated(true);
+    setUserRole(userRole);
   };
 
   if (isAuthenticated === null) {

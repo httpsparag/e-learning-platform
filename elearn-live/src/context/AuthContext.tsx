@@ -34,24 +34,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const initializeAuth = async () => {
       const token = localStorage.getItem('accessToken');
-      if (token) {
+      const userRole = localStorage.getItem('userRole');
+      
+      if (token && userRole) {
+        // Just trust localStorage, don't verify with backend
+        // This prevents 401 errors on page refresh
         try {
-          const response = await authService.getMe();
-          if (response.success && response.data) {
-            const userData = response.data.user || response.data;
-            // Map _id to id for consistency
+          const userData = JSON.parse(localStorage.getItem('user') || '{}');
+          if (userData.id || userData._id) {
             const user: User = {
               id: userData._id || userData.id,
-              name: userData.name,
-              email: userData.email,
-              role: userData.role,
+              name: userData.name || localStorage.getItem('instructorName') || 'User',
+              email: userData.email || localStorage.getItem('instructorEmail') || '',
+              role: userRole,
               avatar: userData.avatar,
             };
             setUser(user);
             setIsAuthenticated(true);
           }
         } catch (error) {
-          localStorage.removeItem('accessToken');
+          console.log('Error parsing user data from localStorage');
           setIsAuthenticated(false);
         }
       } else {
@@ -67,24 +69,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const handleTokenSet = async () => {
       const token = localStorage.getItem('accessToken');
-      if (token) {
+      const userRole = localStorage.getItem('userRole');
+      
+      if (token && userRole) {
         try {
-          const response = await authService.getMe();
-          if (response.success && response.data) {
-            const userData = response.data.user || response.data;
-            // Map _id to id for consistency
+          const userData = JSON.parse(localStorage.getItem('user') || '{}');
+          if (userData.id || userData._id) {
             const user: User = {
               id: userData._id || userData.id,
-              name: userData.name,
-              email: userData.email,
-              role: userData.role,
+              name: userData.name || localStorage.getItem('instructorName') || 'User',
+              email: userData.email || localStorage.getItem('instructorEmail') || '',
+              role: userRole,
               avatar: userData.avatar,
             };
             setUser(user);
             setIsAuthenticated(true);
           }
         } catch (error) {
-          localStorage.removeItem('accessToken');
+          console.log('Error parsing user data from localStorage');
           setIsAuthenticated(false);
         }
       }

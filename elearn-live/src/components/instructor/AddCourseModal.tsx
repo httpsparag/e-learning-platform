@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { X, Upload, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { CldUploadWidget } from 'next-cloudinary';
 import CourseService from '../../services/course.service';
+import { uploadVideoToCloudinary, getVideoUploadSignature, getCloudinaryConfig } from '../../utils/cloudinary';
 
 interface AddCourseModalProps {
   isOpen: boolean;
@@ -24,18 +24,66 @@ export const AddCourseModal = ({
   const [level, setLevel] = useState('Beginner');
   const [videoUrl, setVideoUrl] = useState('');
   const [videoPublicId, setVideoPublicId] = useState('');
-  const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const handleVideoUpload = (result: any) => {
-    if (result.event === 'success') {
-      setVideoUrl(result.info.secure_url);
-      setVideoPublicId(result.info.public_id);
-      setSuccess('Video uploaded successfully!');
-      setTimeout(() => setSuccess(''), 3000);
+  // Log environment variables on mount
+  React.useEffect(() => {
+    const { cloudName, uploadPreset, isConfigured } = getCloudinaryConfig();
+    
+    if (isOpen) {
+      console.log('✅ Cloudinary Configuration:');
+      console.log('   Cloud Name:', cloudName ? '✓ ' + cloudName : '✗ Missing');
+      console.log('   Upload Preset:', uploadPreset ? '✓ ' + uploadPreset : '✗ Missing');
+      console.log('   Status:', isConfigured ? '✓ Configured' : '✗ Not Configured');
     }
+  }, [isOpen]);
+
+  const handleOpenCloudinaryWidget = async () => {
+    const { isConfigured } = getCloudinaryConfig();
+
+    if (!isConfigured) {
+      setError('Cloudinary is not configured. Please check your .env.local file.');
+      return;
+    }
+
+    // Create a file input element
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'video/mp4,video/quicktime,video/x-msvideo,video/webm,video/x-flv,video/x-matroska';
+    
+    fileInput.onchange = async (e: any) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      setError('');
+      
+      try {
+        // Get upload signature from backend
+        const token = localStorage.getItem('accessToken');
+        if (!token) {
+          setError('Authentication required. Please login again.');
+          return;
+        }
+
+        console.log('🔐 Getting upload signature from backend...');
+        const signatureData = await getVideoUploadSignature(token);
+        
+        console.log('📤 Starting secure video upload...');
+        const response = await uploadVideoToCloudinary(file, signatureData);
+
+        setVideoUrl(response.secure_url);
+        setVideoPublicId(response.public_id);
+        setSuccess('Video uploaded successfully!');
+        setTimeout(() => setSuccess(''), 3000);
+      } catch (err: any) {
+        console.error('❌ Upload error:', err);
+        setError(err.message || 'Video upload failed. Please try again.');
+      }
+    };
+
+    fileInput.click();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -60,7 +108,9 @@ export const AddCourseModal = ({
         level: level as 'Beginner' | 'Intermediate' | 'Advanced',
       };
 
+      console.log('📤 Creating course with data:', courseData);
       await CourseService.createCourse(courseData);
+      console.log('✅ Course created successfully');
       setSuccess('Course created successfully!');
       
       // Reset form
@@ -71,10 +121,12 @@ export const AddCourseModal = ({
       setVideoPublicId('');
 
       setTimeout(() => {
+        console.log('🔄 Refreshing course list and closing modal...');
         onClose();
         onCourseAdded?.();
       }, 1500);
     } catch (err: any) {
+      console.error('❌ Error creating course:', err.message);
       setError(err.message || 'Failed to create course');
     } finally {
       setIsSubmitting(false);
@@ -208,32 +260,20 @@ export const AddCourseModal = ({
                   </button>
                 </div>
               ) : (
-                <CldUploadWidget
-                  uploadPreset="courses_video"
-                  cloudName={import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}
-                  onSuccess={handleVideoUpload}
-                  options={{
-                    resourceType: 'video',
-                    maxFileSize: 500000000, // 500MB
-                    folder: 'instructor-courses',
-                    sources: ['local', 'url'],
-                    multiple: false,
-                    maxFiles: 1,
-                  }}
-                >
-                  {({ open }) => (
-                    <button
-                      type="button"
-                      onClick={() => open()}
-                      className="flex flex-col items-center w-full gap-2 transition-colors text-emerald-600 hover:text-emerald-700"
-                    >
-                      <Upload size={32} />
-                      <p className="text-sm font-semibold">Click to upload video</p>
-                      <p className="text-xs text-emerald-600">or drag and drop</p>
-                      <p className="mt-2 text-xs text-gray-600">MP4, MOV, AVI up to 500MB</p>
-                    </button>
-                  )}
-                </CldUploadWidget>
+                <div className="w-full min-h-[240px] flex items-center justify-center bg-white rounded-lg">
+                  <button
+                    type="button"
+                    onClick={handleOpenCloudinaryWidget}
+                    className="flex flex-col items-center gap-3 transition-colors text-emerald-600 hover:text-emerald-700 cursor-pointer py-10 px-4 w-full"
+                  >
+                    <Upload size={48} className="text-emerald-500" />
+                    <div className="text-center">
+                      <p className="text-base font-semibold text-gray-900">Click to upload video</p>
+                      <p className="text-xs text-emerald-600 mt-1">or drag and drop</p>
+                    </div>
+                    <p className="text-xs text-gray-600">MP4, MOV, AVI, WebM up to 500MB</p>
+                  </button>
+                </div>
               )}
             </div>
           </div>

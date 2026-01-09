@@ -44,6 +44,9 @@ export function InstructorShell() {
   const handleLogout = () => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('userRole');
+    localStorage.removeItem('instructorName');
+    localStorage.removeItem('instructorEmail');
+    localStorage.removeItem('instructorId');
     navigate('/instructor/auth');
   };
 
