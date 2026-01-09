@@ -55,6 +55,13 @@ router.patch(
     CourseController.updateCourse(req, res, next)
 );
 
+router.patch(
+  '/:courseId/publish',
+  instructorAuth,
+  (req: AuthRequest, res: Response, next: NextFunction) =>
+    CourseController.publishCourse(req, res, next)
+);
+
 router.delete(
   '/:courseId',
   instructorAuth,

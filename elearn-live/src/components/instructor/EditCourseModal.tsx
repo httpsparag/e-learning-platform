@@ -1,24 +1,22 @@
-import React, { useState } from 'react';
-import { X, Upload, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Upload, AlertCircle, CheckCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import CourseService from '../../services/course.service';
-import { uploadVideoToCloudinary, getVideoUploadSignature, getCloudinaryConfig } from '../../utils/cloudinary';
+import { uploadVideoToCloudinary, getVideoUploadSignature } from '../../utils/cloudinary';
 
-interface AddCourseModalProps {
+interface EditCourseModalProps {
   isOpen: boolean;
   onClose: () => void;
-  instructorName: string;
-  instructorEmail: string;
-  onCourseAdded?: () => void;
+  course: any;
+  onCourseUpdated?: () => void;
 }
 
-export const AddCourseModal = ({
+export const EditCourseModal = ({
   isOpen,
   onClose,
-  instructorName,
-  instructorEmail,
-  onCourseAdded,
-}: AddCourseModalProps) => {
+  course,
+  onCourseUpdated,
+}: EditCourseModalProps) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [level, setLevel] = useState('Beginner');
@@ -28,27 +26,19 @@ export const AddCourseModal = ({
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Log environment variables on mount
-  React.useEffect(() => {
-    const { cloudName, uploadPreset, isConfigured } = getCloudinaryConfig();
-    
-    if (isOpen) {
-      console.log('✅ Cloudinary Configuration:');
-      console.log('   Cloud Name:', cloudName ? '✓ ' + cloudName : '✗ Missing');
-      console.log('   Upload Preset:', uploadPreset ? '✓ ' + uploadPreset : '✗ Missing');
-      console.log('   Status:', isConfigured ? '✓ Configured' : '✗ Not Configured');
+  useEffect(() => {
+    if (isOpen && course) {
+      setTitle(course.title || '');
+      setDescription(course.description || '');
+      setLevel(course.level || 'Beginner');
+      setVideoUrl(course.videoUrl || '');
+      setVideoPublicId(course.videoPublicId || '');
+      setError('');
+      setSuccess('');
     }
-  }, [isOpen]);
+  }, [isOpen, course]);
 
-  const handleOpenCloudinaryWidget = async () => {
-    const { isConfigured } = getCloudinaryConfig();
-
-    if (!isConfigured) {
-      setError('Cloudinary is not configured. Please check your .env.local file.');
-      return;
-    }
-
-    // Create a file input element
+  const handleVideoUpload = async () => {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.accept = 'video/mp4,video/quicktime,video/x-msvideo,video/webm,video/x-flv,video/x-matroska';
@@ -60,7 +50,6 @@ export const AddCourseModal = ({
       setError('');
       
       try {
-        // Get upload signature from backend
         const token = localStorage.getItem('accessToken');
         if (!token) {
           setError('Authentication required. Please login again.');
@@ -75,7 +64,7 @@ export const AddCourseModal = ({
 
         setVideoUrl(response.secure_url);
         setVideoPublicId(response.public_id);
-        setSuccess('Video uploaded successfully!');
+        setSuccess('Video updated successfully!');
         setTimeout(() => setSuccess(''), 3000);
       } catch (err: any) {
         console.error('❌ Upload error:', err);
@@ -91,46 +80,32 @@ export const AddCourseModal = ({
     setError('');
     setSuccess('');
 
-    if (!title || !description || !videoUrl) {
-      setError('Please fill all fields and upload a video');
+    if (!title || !description) {
+      setError('Please fill all required fields');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const courseData = {
+      const updateData = {
         title,
         description,
-        videoUrl,
-        videoPublicId,
-        instructorName,
-        instructorEmail,
         level: level as 'Beginner' | 'Intermediate' | 'Advanced',
+        ...(videoUrl && { videoUrl, videoPublicId }),
       };
 
-      console.log('📤 Creating course with data:', courseData);
-      const result = await CourseService.createCourse(courseData);
-      console.log('✅ Course created successfully:', result);
-      setSuccess('Course created successfully!');
-      
-      // Reset form
-      setTitle('');
-      setDescription('');
-      setLevel('Beginner');
-      setVideoUrl('');
-      setVideoPublicId('');
+      console.log('📤 Updating course:', updateData);
+      await CourseService.updateCourse(course._id, updateData);
+      console.log('✅ Course updated successfully');
+      setSuccess('Course updated successfully!');
 
-      // Wait a moment then close modal and trigger refresh
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      console.log('🔄 Triggering course list refresh...');
-      onClose();
-      
-      // Give it a moment for modal to close, then refresh
-      await new Promise(resolve => setTimeout(resolve, 300));
-      onCourseAdded?.();
+      setTimeout(() => {
+        onClose();
+        onCourseUpdated?.();
+      }, 1500);
     } catch (err: any) {
-      console.error('❌ Error creating course:', err.message);
-      setError(err.message || 'Failed to create course');
+      console.error('❌ Error updating course:', err.message);
+      setError(err.message || 'Failed to update course');
     } finally {
       setIsSubmitting(false);
     }
@@ -147,11 +122,11 @@ export const AddCourseModal = ({
         className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
       >
         {/* Header */}
-        <div className="sticky top-0 flex items-center justify-between p-6 border-b bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200">
-          <h2 className="text-2xl font-bold text-gray-900">Create New Course</h2>
+        <div className="sticky top-0 flex items-center justify-between p-6 border-b border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+          <h2 className="text-2xl font-bold text-gray-900">Edit Course</h2>
           <button
             onClick={onClose}
-            className="p-2 transition-colors rounded-lg hover:bg-emerald-100"
+            className="p-2 transition-colors rounded-lg hover:bg-blue-100"
           >
             <X size={24} className="text-gray-600" />
           </button>
@@ -176,18 +151,12 @@ export const AddCourseModal = ({
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="p-4 border rounded-lg bg-emerald-50 border-emerald-200"
+              className="flex gap-3 p-4 border rounded-lg border-emerald-200 bg-emerald-50"
             >
-              <p className="font-semibold text-emerald-700">{success}</p>
+              <CheckCircle className="flex-shrink-0 text-emerald-600" size={20} />
+              <p className="text-emerald-700">{success}</p>
             </motion.div>
           )}
-
-          {/* Instructor Info */}
-          <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
-            <p className="text-sm text-gray-600">Instructor</p>
-            <p className="text-lg font-semibold text-gray-900">{instructorName}</p>
-            <p className="text-sm text-gray-600">{instructorEmail}</p>
-          </div>
 
           {/* Title */}
           <div>
@@ -198,8 +167,8 @@ export const AddCourseModal = ({
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Enter course title (e.g., Advanced React & TypeScript)"
-              className="w-full px-4 py-3 transition-all border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-transparent"
+              placeholder="Enter course title"
+              className="w-full px-4 py-3 transition-all border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
               disabled={isSubmitting}
             />
           </div>
@@ -207,14 +176,14 @@ export const AddCourseModal = ({
           {/* Description */}
           <div>
             <label className="block mb-2 text-sm font-semibold text-gray-700">
-              Short Description *
+              Description *
             </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Brief description of your course (what students will learn)"
+              placeholder="Describe your course"
               rows={4}
-              className="w-full px-4 py-3 transition-all border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-transparent"
+              className="w-full px-4 py-3 transition-all border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
               disabled={isSubmitting}
             />
           </div>
@@ -227,7 +196,7 @@ export const AddCourseModal = ({
             <select
               value={level}
               onChange={(e) => setLevel(e.target.value)}
-              className="w-full px-4 py-3 transition-all border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-transparent"
+              className="w-full px-4 py-3 transition-all border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
               disabled={isSubmitting}
             >
               <option value="Beginner">Beginner</option>
@@ -236,47 +205,40 @@ export const AddCourseModal = ({
             </select>
           </div>
 
-          {/* Video Upload */}
+          {/* Video Section */}
           <div>
             <label className="block mb-2 text-sm font-semibold text-gray-700">
-              Upload Course Video *
+              Course Video
             </label>
-            <div className="p-6 border-2 border-dashed rounded-lg border-emerald-300 bg-emerald-50">
+            <div className="p-6 border-2 border-blue-300 border-dashed rounded-lg bg-blue-50">
               {videoUrl ? (
                 <div className="space-y-3">
-                  <div className="flex items-center gap-3 p-3 rounded-lg bg-emerald-100">
-                    <Upload className="text-emerald-600" size={20} />
+                  <div className="flex items-center gap-3 p-3 bg-blue-100 rounded-lg">
+                    <Upload className="text-blue-600" size={20} />
                     <div>
-                      <p className="text-sm font-semibold text-emerald-900">Video uploaded</p>
-                      <p className="text-xs text-emerald-700">Ready to use</p>
+                      <p className="text-sm font-semibold text-blue-900">Video uploaded</p>
+                      <p className="text-xs text-blue-700">Click to replace</p>
                     </div>
                   </div>
                   <button
                     type="button"
-                    onClick={() => {
-                      setVideoUrl('');
-                      setVideoPublicId('');
-                    }}
-                    className="text-sm font-semibold text-emerald-600 hover:text-emerald-700"
+                    onClick={handleVideoUpload}
+                    className="text-sm font-semibold text-blue-600 hover:text-blue-700"
                   >
                     Upload different video
                   </button>
                 </div>
               ) : (
-                <div className="w-full min-h-[240px] flex items-center justify-center bg-white rounded-lg">
-                  <button
-                    type="button"
-                    onClick={handleOpenCloudinaryWidget}
-                    className="flex flex-col items-center gap-3 transition-colors text-emerald-600 hover:text-emerald-700 cursor-pointer py-10 px-4 w-full"
-                  >
-                    <Upload size={48} className="text-emerald-500" />
-                    <div className="text-center">
-                      <p className="text-base font-semibold text-gray-900">Click to upload video</p>
-                      <p className="text-xs text-emerald-600 mt-1">or drag and drop</p>
-                    </div>
-                    <p className="text-xs text-gray-600">MP4, MOV, AVI, WebM up to 500MB</p>
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={handleVideoUpload}
+                  className="flex flex-col items-center w-full gap-3 px-4 py-10 text-blue-600 transition-colors cursor-pointer hover:text-blue-700"
+                >
+                  <Upload size={48} className="text-blue-500" />
+                  <div className="text-center">
+                    <p className="text-base font-semibold text-gray-900">Click to upload video</p>
+                  </div>
+                </button>
               )}
             </div>
           </div>
@@ -293,19 +255,16 @@ export const AddCourseModal = ({
             </button>
             <button
               type="submit"
-              disabled={isSubmitting || !videoUrl}
-              className="flex items-center justify-center flex-1 gap-2 px-4 py-3 font-semibold text-white transition-colors rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isSubmitting}
+              className="flex items-center justify-center flex-1 gap-2 px-4 py-3 font-semibold text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white rounded-full border-t-transparent animate-spin" />
-                  Creating...
+                  Updating...
                 </>
               ) : (
-                <>
-                  <Upload size={18} />
-                  Create Course
-                </>
+                'Update Course'
               )}
             </button>
           </div>

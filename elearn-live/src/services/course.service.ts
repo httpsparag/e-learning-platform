@@ -98,7 +98,22 @@ class CourseService {
     }
   }
 
-  async updateCourse(courseId: string, updateData: Partial<CreateCourseData>) {
+  async publishCourse(courseId: string) {
+    try {
+      console.log('📤 Publishing course:', courseId);
+      const response = await axiosInstance.patch(
+        `/courses/${courseId}/publish`,
+        {},
+        {
+          headers: this.getAuthHeaders(),
+        }
+      );
+      console.log('✅ Course published successfully');
+      return response.data.data;
+    } catch (error: any) {
+      this.handleAuthError(error);
+    }
+  }  async updateCourse(courseId: string, updateData: Partial<CreateCourseData>) {
     try {
       const response = await axiosInstance.patch(`/courses/${courseId}`, updateData, {
         headers: this.getAuthHeaders(),

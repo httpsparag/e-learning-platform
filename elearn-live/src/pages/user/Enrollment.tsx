@@ -37,13 +37,13 @@ export const Enrollment: React.FC = () => {
     try {
       // Call enrollment API
       // const response = await enrollmentService.enroll(courseId);
-      // On success, redirect to payment page
+      // On success, redirect to course video player
       setTimeout(() => {
         setIsProcessing(false);
-        navigate('/payment', {
+        navigate(`/course-play/${courseId}`, {
           state: {
             courseId: courseId,
-            message: 'Enrollment completed! Now proceed to payment',
+            message: 'Enrollment completed! Enjoy the course.',
           },
         });
       }, 2000);
@@ -76,7 +76,7 @@ export const Enrollment: React.FC = () => {
             <div className="bg-white rounded-2xl shadow-lg p-8">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Complete Your Enrollment</h1>
               <p className="text-gray-600 mb-8">
-                You're just one step away from joining this amazing course!
+                Confirm your enrollment to get instant access to the course content and video player.
               </p>
 
               {/* Student Info Card */}
@@ -119,7 +119,7 @@ export const Enrollment: React.FC = () => {
                 className={`w-full py-4 px-6 rounded-lg font-bold text-white text-lg transition-all duration-300 ${
                   isProcessing
                     ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-blue-600 hover:bg-blue-700'
+                    : 'bg-emerald-600 hover:bg-emerald-700'
                 }`}
               >
                 {isProcessing ? (
@@ -128,7 +128,7 @@ export const Enrollment: React.FC = () => {
                     Processing...
                   </span>
                 ) : (
-                  'Complete Enrollment'
+                  'Complete Enrollment & Access Course'
                 )}
               </button>
             </div>
@@ -153,16 +153,8 @@ export const Enrollment: React.FC = () => {
               {/* Course Details */}
               <div className="space-y-3 mb-6 pb-6 border-b border-gray-200">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Course Price</span>
-                  <span className="font-semibold text-gray-900">$99.00</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Discount (50%)</span>
-                  <span className="font-semibold text-green-600">-$99.00</span>
-                </div>
-                <div className="flex justify-between text-lg font-bold">
-                  <span className="text-gray-900">Total</span>
-                  <span className="text-blue-600">$99.00</span>
+                  <span className="text-gray-600">Status</span>
+                  <span className="font-semibold text-green-600">✓ Free Access</span>
                 </div>
               </div>
 
@@ -172,11 +164,11 @@ export const Enrollment: React.FC = () => {
                 <div className="space-y-2 text-sm text-gray-700">
                   <div className="flex items-start gap-2">
                     <CheckCircle size={16} className="text-green-500 mt-0.5 flex-shrink-0" />
-                    <span>32 hours of video content</span>
+                    <span>Full video content access</span>
                   </div>
                   <div className="flex items-start gap-2">
                     <CheckCircle size={16} className="text-green-500 mt-0.5 flex-shrink-0" />
-                    <span>156 lessons with projects</span>
+                    <span>HD video player</span>
                   </div>
                   <div className="flex items-start gap-2">
                     <CheckCircle size={16} className="text-green-500 mt-0.5 flex-shrink-0" />
@@ -184,7 +176,7 @@ export const Enrollment: React.FC = () => {
                   </div>
                   <div className="flex items-start gap-2">
                     <CheckCircle size={16} className="text-green-500 mt-0.5 flex-shrink-0" />
-                    <span>Certificate of completion</span>
+                    <span>Enroll instantly</span>
                   </div>
                 </div>
               </div>

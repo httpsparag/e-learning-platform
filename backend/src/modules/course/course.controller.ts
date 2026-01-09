@@ -95,6 +95,22 @@ export class CourseController {
     }
   }
 
+  // PATCH /api/courses/:courseId/publish
+  async publishCourse(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { courseId } = req.params;
+
+      if (!courseId) {
+        return sendError(res, 400, 'Course ID is required');
+      }
+
+      const result = await CourseService.updateCourse(courseId, { status: 'Active' });
+      return sendSuccess(res, 200, 'Course published successfully', result.course);
+    } catch (error: any) {
+      return sendError(res, 400, error.message);
+    }
+  }
+
   // GET /api/courses
   async getAllCourses(req: Request, res: Response, next: NextFunction) {
     try {

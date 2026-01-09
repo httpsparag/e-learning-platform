@@ -27,7 +27,8 @@ import {
   Profile, 
   LiveClass, 
   Payment, 
-  Enrollment 
+  Enrollment,
+  CoursePlay
 } from "./pages/user";
 
 // Admin Pages
@@ -96,6 +97,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Payment />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/course-play/:courseId"
+              element={
+                <ProtectedRoute>
+                  <CoursePlay />
                 </ProtectedRoute>
               }
             />

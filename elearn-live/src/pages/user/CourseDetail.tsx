@@ -3,12 +3,13 @@ import {
   Star, Users, Clock, BookOpen, CheckCircle2, ArrowLeft, Play, 
   Download, Award, Infinity, Video, FileText, Globe, Shield
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { FloatingNavbar } from "../../components/layout/FloatingNavbar";
 import { useAuth } from "../../context/AuthContext";
 
 export function CourseDetail() {
   const navigate = useNavigate();
+  const { courseId } = useParams();
   const { isAuthenticated } = useAuth();
 
   return (
@@ -146,12 +147,12 @@ export function CourseDetail() {
                         if (!isAuthenticated) {
                           navigate("/auth/signup", {
                             state: {
-                              redirectAfterAuth: "/enrollment/course-id",
+                              redirectAfterAuth: `/enrollment/${courseId}`,
                               message: "Please sign up to enroll in this course",
                             },
                           });
                         } else {
-                          navigate("/enrollment/course-id");
+                          navigate(`/enrollment/${courseId}`);
                         }
                       }}
                       className="w-full mb-3 py-4 px-6 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 transition-all duration-300 shadow-md hover:shadow-lg text-lg">

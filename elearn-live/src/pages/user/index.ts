@@ -6,3 +6,4 @@ export { Dashboard } from './Dashboard';
 export { Payment } from './Payment';
 export { Profile } from './Profile';
 export { Enrollment } from './Enrollment';
+export { CoursePlay } from './CoursePlay';

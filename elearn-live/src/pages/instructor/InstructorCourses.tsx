@@ -2,6 +2,8 @@ import { motion } from "framer-motion";
 import { Search, Filter, Plus, Edit, Trash2, Eye, Star } from "lucide-react";
 import { useState, useEffect } from "react";
 import { AddCourseModal } from "../../components/instructor/AddCourseModal";
+import { EditCourseModal } from "../../components/instructor/EditCourseModal";
+import { ViewCourseModal } from "../../components/instructor/ViewCourseModal";
 import CourseService from "../../services/course.service";
 import type { Course } from "../../services/course.service";
 
@@ -12,6 +14,9 @@ export const InstructorCourses = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [instructorName, setInstructorName] = useState("");
   const [instructorEmail, setInstructorEmail] = useState("");
 
@@ -37,10 +42,19 @@ export const InstructorCourses = () => {
       console.log('🔄 Fetching instructor courses...');
       const data = await CourseService.getInstructorCourses();
       console.log('✅ Courses fetched successfully:', data);
-      setCourses(data || []);
+      console.log('   Total courses:', data?.length || 0);
+      
+      if (data && Array.isArray(data)) {
+        setCourses(data);
+        console.log('📚 Courses set in state');
+      } else {
+        console.warn('⚠️ Unexpected data format:', data);
+        setCourses([]);
+      }
     } catch (err: any) {
       console.error('❌ Error fetching courses:', err.message);
       setError(err.message || "Failed to load courses");
+      setCourses([]);
     } finally {
       setIsLoading(false);
     }
@@ -55,6 +69,28 @@ export const InstructorCourses = () => {
         setError(err.message || "Failed to delete course");
       }
     }
+  };
+
+  const handlePublishCourse = async (courseId: string) => {
+    try {
+      await CourseService.publishCourse(courseId);
+      // Update the course in state
+      setCourses(courses.map(c => 
+        c._id === courseId ? { ...c, status: 'Active' } : c
+      ));
+    } catch (err: any) {
+      setError(err.message || "Failed to publish course");
+    }
+  };
+
+  const handleViewCourse = (course: Course) => {
+    setSelectedCourse(course);
+    setIsViewModalOpen(true);
+  };
+
+  const handleEditCourse = (course: Course) => {
+    setSelectedCourse(course);
+    setIsEditModalOpen(true);
   };
 
   const filteredCourses = courses.filter(course => {
@@ -226,21 +262,45 @@ export const InstructorCourses = () => {
 
                 {/* Actions */}
                 <div className="flex gap-3">
-                  <button className="flex-1 flex items-center justify-center gap-2 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg transition-colors font-semibold">
+                  <button 
+                    onClick={() => handleViewCourse(course)}
+                    className="flex-1 flex items-center justify-center gap-2 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg transition-colors font-semibold"
+                  >
                     <Eye size={16} />
                     View
                   </button>
-                  <button className="flex-1 flex items-center justify-center gap-2 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors font-semibold">
-                    <Edit size={16} />
-                    Edit
-                  </button>
                   {course.status === "Draft" && (
+                    <>
+                      <button
+                        onClick={() => handleEditCourse(course)}
+                        className="flex-1 flex items-center justify-center gap-2 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors font-semibold"
+                      >
+                        <Edit size={16} />
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handlePublishCourse(course._id)}
+                        className="flex-1 flex items-center justify-center gap-2 py-2 bg-green-50 hover:bg-green-100 text-green-700 rounded-lg transition-colors font-semibold"
+                      >
+                        <Edit size={16} />
+                        Publish
+                      </button>
+                      <button
+                        onClick={() => handleDeleteCourse(course._id)}
+                        className="flex-1 flex items-center justify-center gap-2 py-2 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg transition-colors font-semibold"
+                      >
+                        <Trash2 size={16} />
+                        Delete
+                      </button>
+                    </>
+                  )}
+                  {course.status === "Active" && (
                     <button
-                      onClick={() => handleDeleteCourse(course._id)}
-                      className="flex-1 flex items-center justify-center gap-2 py-2 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg transition-colors font-semibold"
+                      onClick={() => handleEditCourse(course)}
+                      className="flex-1 flex items-center justify-center gap-2 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors font-semibold"
                     >
-                      <Trash2 size={16} />
-                      Delete
+                      <Edit size={16} />
+                      Edit
                     </button>
                   )}
                 </div>
@@ -287,6 +347,22 @@ export const InstructorCourses = () => {
         instructorName={instructorName}
         instructorEmail={instructorEmail}
         onCourseAdded={fetchCourses}
-      />    </div>
+      />
+
+      {/* View Course Modal */}
+      <ViewCourseModal
+        isOpen={isViewModalOpen}
+        onClose={() => setIsViewModalOpen(false)}
+        course={selectedCourse}
+      />
+
+      {/* Edit Course Modal */}
+      <EditCourseModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        course={selectedCourse}
+        onCourseUpdated={fetchCourses}
+      />
+    </div>
   );
 };
