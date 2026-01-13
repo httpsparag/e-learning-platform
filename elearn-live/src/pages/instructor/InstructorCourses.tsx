@@ -110,9 +110,9 @@ export const InstructorCourses = () => {
 
   if (isLoading) {
     return (
-      <div className="w-full flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center w-full min-h-screen">
         <div className="text-center">
-          <div className="w-12 h-12 border-b-2 border-emerald-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-12 h-12 mx-auto mb-4 border-b-2 rounded-full border-emerald-600 animate-spin"></div>
           <p className="text-gray-600">Loading your courses...</p>
         </div>
       </div>
@@ -126,11 +126,11 @@ export const InstructorCourses = () => {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-3xl font-bold text-gray-900">My Courses</h2>
-            <p className="text-gray-600 mt-1">Manage all your courses and track student progress</p>
+            <p className="mt-1 text-gray-600">Manage all your courses and track student progress</p>
           </div>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg transition-colors font-semibold"
+            className="flex items-center gap-2 px-6 py-3 font-semibold text-white transition-colors rounded-lg bg-emerald-600 hover:bg-emerald-700"
           >
             <Plus size={20} />
             Create New Course
@@ -142,31 +142,31 @@ export const InstructorCourses = () => {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700"
+            className="p-4 mb-6 text-red-700 border border-red-200 rounded-lg bg-red-50"
           >
             {error}
           </motion.div>
         )}
 
         {/* Filters & Search */}
-        <div className="flex gap-4 flex-wrap">
+        <div className="flex flex-wrap gap-4">
           <div className="relative flex-1 max-w-xs">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <Search className="absolute text-gray-400 -translate-y-1/2 left-3 top-1/2" size={18} />
             <input
               type="text"
               placeholder="Search courses..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-emerald-500"
+              className="w-full py-2 pl-10 pr-4 border border-gray-200 rounded-lg focus:outline-none focus:border-emerald-500"
             />
           </div>
 
-          <div className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg bg-white">
+          <div className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg">
             <Filter size={18} className="text-gray-400" />
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="outline-none text-gray-700 bg-transparent"
+              className="text-gray-700 bg-transparent outline-none"
             >
               <option value="all">All Courses</option>
               <option value="active">Active</option>
@@ -176,49 +176,79 @@ export const InstructorCourses = () => {
         </div>
       </div>
 
+      {/* Summary Stats */}
+      {courses.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="p-6 mb-8 border bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl border-emerald-200"
+        >
+          <h3 className="mb-4 text-lg font-bold text-gray-900">Course Summary</h3>
+          <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
+            <div>
+              <p className="text-3xl font-bold text-emerald-600">{stats.activeCourses}</p>
+              <p className="mt-1 text-sm text-gray-600">Active Courses</p>
+            </div>
+            <div>
+              <p className="text-3xl font-bold text-gray-900">{stats.totalStudents}</p>
+              <p className="mt-1 text-sm text-gray-600">Total Students</p>
+            </div>
+            <div>
+              <p className="text-3xl font-bold text-yellow-600">{stats.avgRating}</p>
+              <p className="mt-1 text-sm text-gray-600">Avg Rating</p>
+            </div>
+            <div>
+              <p className="text-3xl font-bold text-emerald-600">${stats.totalRevenue.toFixed(0)}</p>
+              <p className="mt-1 text-sm text-gray-600">Total Revenue</p>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
       {/* Courses Grid */}
       {filteredCourses.length === 0 ? (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200"
+          className="py-12 text-center border-2 border-gray-200 border-dashed bg-gray-50 rounded-xl"
         >
-          <Plus size={48} className="mx-auto text-gray-400 mb-4" />
-          <h3 className="text-xl font-bold text-gray-900 mb-2">No courses yet</h3>
-          <p className="text-gray-600 mb-6">Start creating your first course to reach students</p>
+          <Plus size={48} className="mx-auto mb-4 text-gray-400" />
+          <h3 className="mb-2 text-xl font-bold text-gray-900">No courses yet</h3>
+          <p className="mb-6 text-gray-600">Start creating your first course to reach students</p>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg transition-colors font-semibold"
+            className="inline-flex items-center gap-2 px-6 py-3 font-semibold text-white transition-colors rounded-lg bg-emerald-600 hover:bg-emerald-700"
           >
             <Plus size={20} />
             Create First Course
           </button>
         </motion.div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 gap-5 mb-8 md:grid-cols-2 lg:grid-cols-3">
           {filteredCourses.map((course, index) => (
             <motion.div
               key={course._id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition-all"
+              className="overflow-hidden transition-all bg-white border border-gray-200 rounded-xl hover:shadow-lg"
             >
               {/* Card Header */}
-              <div className={`h-32 ${course.status === "Active" ? "bg-gradient-to-r from-emerald-500 to-emerald-600" : "bg-gradient-to-r from-gray-400 to-gray-500"}`}></div>
+              <div className={`h-24 ${course.status === "Active" ? "bg-gradient-to-r from-emerald-500 to-emerald-600" : "bg-gradient-to-r from-gray-400 to-gray-500"}`}></div>
 
               {/* Card Content */}
-              <div className="p-6 relative">
-                <div className="absolute -top-6 left-6 w-12 h-12 bg-white rounded-lg border-4 border-gray-100 flex items-center justify-center text-lg font-bold">
+              <div className="relative p-4">
+                <div className="absolute flex items-center justify-center w-12 h-12 text-lg font-bold bg-white border-4 border-gray-100 rounded-lg -top-6 left-6">
                   {course.level.charAt(0)}
                 </div>
 
-                <div className="flex items-start justify-between mb-4 pt-4">
+                <div className="flex items-start justify-between pt-2 mb-3">
                   <div className="flex-1">
-                    <h3 className="text-lg font-bold text-gray-900">{course.title}</h3>
-                    <p className="text-sm text-gray-600 mt-1 line-clamp-2">{course.description}</p>
+                    <h3 className="text-base font-bold text-gray-900">{course.title}</h3>
+                    <p className="mt-1 text-xs text-gray-600 line-clamp-1">{course.description}</p>
                   </div>
-                  <span className={`ml-4 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${
+                  <span className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${
                     course.status === "Active"
                       ? "bg-emerald-100 text-emerald-700"
                       : "bg-gray-100 text-gray-700"
@@ -228,78 +258,78 @@ export const InstructorCourses = () => {
                 </div>
 
                 {/* Stats */}
-                <div className="grid grid-cols-4 gap-3 mb-4 py-4 border-y border-gray-100">
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-gray-900">{course.enrolledCount}</p>
+                <div className="grid grid-cols-4 gap-2 py-2 mb-3 text-center border-gray-100 border-y">
+                  <div>
+                    <p className="text-lg font-bold text-gray-900">{course.enrolledCount}</p>
                     <p className="text-xs text-gray-600">Students</p>
                   </div>
-                  <div className="text-center">
+                  <div>
                     <div className="flex items-center justify-center gap-1">
                       {course.rating > 0 ? (
                         <>
-                          <Star size={14} className="fill-yellow-400 text-yellow-400" />
-                          <p className="text-2xl font-bold text-gray-900">{course.rating.toFixed(1)}</p>
+                          <Star size={12} className="text-yellow-400 fill-yellow-400" />
+                          <p className="text-lg font-bold text-gray-900">{course.rating.toFixed(1)}</p>
                         </>
                       ) : (
-                        <p className="text-2xl font-bold text-gray-400">N/A</p>
+                        <p className="text-lg font-bold text-gray-400">N/A</p>
                       )}
                     </div>
-                    <p className="text-xs text-gray-600">{course.reviewCount} reviews</p>
+                    <p className="text-xs text-gray-600">{course.reviewCount} r</p>
                   </div>
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-gray-900">{course.enrolledCount}/{course.capacity}</p>
-                    <p className="text-xs text-gray-600">Capacity</p>
+                  <div>
+                    <p className="text-lg font-bold text-gray-900">{course.enrolledCount}/{course.capacity}</p>
+                    <p className="text-xs text-gray-600">Cap</p>
                   </div>
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-emerald-600">${course.revenue.toFixed(0)}</p>
-                    <p className="text-xs text-gray-600">Revenue</p>
+                  <div>
+                    <p className="text-lg font-bold text-emerald-600">${course.revenue.toFixed(0)}</p>
+                    <p className="text-xs text-gray-600">Rev</p>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between text-xs text-gray-600 mb-4">
-                  <span>Last updated: {new Date(course.lastUpdated).toLocaleDateString()}</span>
+                <div className="flex items-center justify-between mb-3 text-xs text-gray-600">
+                  <span>Updated: {new Date(course.lastUpdated).toLocaleDateString()}</span>
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-3">
+                <div className="flex gap-2">
                   <button 
                     onClick={() => handleViewCourse(course)}
-                    className="flex-1 flex items-center justify-center gap-2 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg transition-colors font-semibold"
+                    className="flex-1 flex items-center justify-center gap-1 py-1.5 text-sm bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg transition-colors font-semibold"
                   >
-                    <Eye size={16} />
+                    <Eye size={14} />
                     View
                   </button>
                   {course.status === "Draft" && (
                     <>
                       <button
                         onClick={() => handleEditCourse(course)}
-                        className="flex-1 flex items-center justify-center gap-2 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors font-semibold"
+                        className="flex-1 flex items-center justify-center gap-1 py-1.5 text-sm bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors font-semibold"
                       >
-                        <Edit size={16} />
+                        <Edit size={14} />
                         Edit
                       </button>
                       <button
                         onClick={() => handlePublishCourse(course._id)}
-                        className="flex-1 flex items-center justify-center gap-2 py-2 bg-green-50 hover:bg-green-100 text-green-700 rounded-lg transition-colors font-semibold"
+                        className="flex-1 flex items-center justify-center gap-1 py-1.5 text-sm bg-green-50 hover:bg-green-100 text-green-700 rounded-lg transition-colors font-semibold"
                       >
-                        <Edit size={16} />
-                        Publish
+                        <Edit size={14} />
+                        Pub
                       </button>
                       <button
                         onClick={() => handleDeleteCourse(course._id)}
-                        className="flex-1 flex items-center justify-center gap-2 py-2 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg transition-colors font-semibold"
+                        className="flex-1 flex items-center justify-center gap-1 py-1.5 text-sm bg-red-50 hover:bg-red-100 text-red-700 rounded-lg transition-colors font-semibold"
                       >
-                        <Trash2 size={16} />
-                        Delete
+                        <Trash2 size={14} />
+                        Del
                       </button>
                     </>
                   )}
                   {course.status === "Active" && (
                     <button
                       onClick={() => handleEditCourse(course)}
-                      className="flex-1 flex items-center justify-center gap-2 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors font-semibold"
+                      className="flex-1 flex items-center justify-center gap-1 py-1.5 text-sm bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors font-semibold"
                     >
-                      <Edit size={16} />
+                      <Edit size={14} />
                       Edit
                     </button>
                   )}
@@ -308,36 +338,6 @@ export const InstructorCourses = () => {
             </motion.div>
           ))}
         </div>
-      )}
-
-      {/* Summary Stats */}
-      {filteredCourses.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl border border-emerald-200 p-6"
-        >
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Course Summary</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <div>
-              <p className="text-3xl font-bold text-emerald-600">{stats.activeCourses}</p>
-              <p className="text-sm text-gray-600 mt-1">Active Courses</p>
-            </div>
-            <div>
-              <p className="text-3xl font-bold text-gray-900">{stats.totalStudents}</p>
-              <p className="text-sm text-gray-600 mt-1">Total Students</p>
-            </div>
-            <div>
-              <p className="text-3xl font-bold text-yellow-600">{stats.avgRating}</p>
-              <p className="text-sm text-gray-600 mt-1">Avg Rating</p>
-            </div>
-            <div>
-              <p className="text-3xl font-bold text-emerald-600">${stats.totalRevenue.toFixed(0)}</p>
-              <p className="text-sm text-gray-600 mt-1">Total Revenue</p>
-            </div>
-          </div>
-        </motion.div>
       )}
 
       {/* Add Course Modal */}

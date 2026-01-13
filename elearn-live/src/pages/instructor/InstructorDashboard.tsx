@@ -5,38 +5,77 @@ import {
   Clock, Star
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import CourseService from "../../services/course.service";
+
+interface Course {
+  _id: string;
+  title: string;
+  enrolledCount: number;
+  rating: number;
+  status: string;
+  revenue: number;
+}
 
 export const InstructorDashboard = () => {
   const navigate = useNavigate();
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Stats Data - Instructor Specific
+  // Fetch instructor courses on mount
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        setLoading(true);
+        const coursesData = await CourseService.getInstructorCourses();
+        setCourses(coursesData || []);
+      } catch (err: any) {
+        console.error('Error fetching courses:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCourses();
+  }, []);
+
+  // Calculate dynamic stats from courses
+  const totalStudents = courses.reduce((sum, course) => sum + (course.enrolledCount || 0), 0);
+  const activeCourses = courses.filter(c => c.status === "Active").length;
+  const totalEarnings = courses.reduce((sum, course) => sum + (course.revenue || 0), 0);
+  const avgRating = courses.length > 0 
+    ? (courses.reduce((sum, course) => sum + (course.rating || 0), 0) / courses.length).toFixed(1)
+    : 0;
+
   const stats = [
-    { label: "My Students", value: "456", change: "+8.3%", icon: <Users size={24} />, color: "emerald" },
-    { label: "Active Courses", value: "5", change: "+2", icon: <BookOpen size={24} />, color: "blue" },
-    { label: "Upcoming Sessions", value: "12", change: "+3 this week", icon: <Video size={24} />, color: "purple" },
-    { label: "Total Earnings", value: "$12,450", change: "+18.5%", icon: <DollarSign size={24} />, color: "amber" }
+    { label: "My Students", value: totalStudents.toString(), change: "+8.3%", icon: <Users size={24} />, color: "emerald" },
+    { label: "Active Courses", value: activeCourses.toString(), change: "+2", icon: <BookOpen size={24} />, color: "blue" },
+    { label: "Upcoming Sessions", value: courses.length.toString(), change: "+3 this week", icon: <Video size={24} />, color: "purple" },
+    { label: "Total Earnings", value: `$${totalEarnings.toLocaleString()}`, change: "+18.5%", icon: <DollarSign size={24} />, color: "amber" }
   ];
 
-  const myCourses = [
-    { title: "Advanced React & TypeScript", students: 234, rating: 4.8, status: "Active", revenue: "$3,450" },
-    { title: "Full-Stack Web Development", students: 189, rating: 4.7, status: "Active", revenue: "$2,890" },
-    { title: "JavaScript ES6+ Guide", students: 421, rating: 4.9, status: "Active", revenue: "$5,230" },
-    { title: "TypeScript Masterclass", students: 167, rating: 4.6, status: "Draft", revenue: "$1,880" }
-  ];
+  const myCourses = courses.map(course => ({
+    title: course.title,
+    students: course.enrolledCount || 0,
+    rating: course.rating || 0,
+    status: course.status || "Draft",
+    revenue: `$${(course.revenue || 0).toLocaleString()}`
+  }));
 
-  const upcomingSessions = [
-    { title: "React Performance Tips", time: "Today, 3:00 PM", students: 45, duration: "1.5 hrs" },
-    { title: "Advanced TypeScript Patterns", time: "Tomorrow, 2:00 PM", students: 38, duration: "2 hrs" },
-    { title: "Web Performance Optimization", time: "Jan 10, 4:00 PM", students: 52, duration: "1.5 hrs" },
-    { title: "React Hooks Deep Dive", time: "Jan 11, 10:00 AM", students: 29, duration: "2 hrs" }
-  ];
+  const upcomingSessions = courses.slice(0, 4).map((course, index) => ({
+    title: course.title,
+    time: `Course Session ${index + 1}`,
+    students: course.enrolledCount || 0,
+    duration: "Varies"
+  }));
 
-  const recentActivity = [
-    { type: "enrollment", message: "3 new students enrolled in 'Advanced React'", time: "2 hours ago" },
-    { type: "rating", message: "New 5-star review on 'Full-Stack Development'", time: "4 hours ago" },
-    { type: "completion", message: "15 students completed 'JavaScript ES6+ Guide'", time: "1 day ago" },
-    { type: "session", message: "Session recording available for 'Web Performance'", time: "2 days ago" }
-  ];
+  const recentActivity = courses.slice(0, 4).map((course, index) => ({
+    type: index % 2 === 0 ? "enrollment" : "rating",
+    message: `${course.enrolledCount} students enrolled in '${course.title}'`,
+    time: `${index + 1} day${index > 0 ? 's' : ''} ago`
+  }));
 
   const getColorClasses = (color: string) => {
     const colors = {
@@ -48,10 +87,37 @@ export const InstructorDashboard = () => {
     return colors[color as keyof typeof colors] || colors.emerald;
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center w-full min-h-screen">
+        <div className="text-center">
+          <div className="w-12 h-12 mx-auto mb-4 border-b-2 rounded-full animate-spin border-emerald-600"></div>
+          <p className="text-gray-600">Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center w-full min-h-screen">
+        <div className="text-center">
+          <p className="mb-4 text-red-600">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="font-semibold text-emerald-600 hover:text-emerald-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full">
       {/* Top Header */}
-      <header className="h-20 bg-white flex items-center justify-between px-8 mb-8 rounded-xl shadow-sm">
+      <header className="flex items-center justify-between h-20 px-8 mb-8 bg-white shadow-sm rounded-xl">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Dashboard</h2>
           <p className="text-sm text-gray-600">Welcome back, Instructor! Here's your teaching overview.</p>
@@ -60,22 +126,22 @@ export const InstructorDashboard = () => {
         <div className="flex items-center gap-4">
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <Search className="absolute text-gray-400 -translate-y-1/2 left-3 top-1/2" size={18} />
             <input
               type="text"
               placeholder="Search courses..."
-              className="w-64 pl-10 pr-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:border-emerald-500 focus:bg-gray-50"
+              className="w-64 py-2 pl-10 pr-4 border border-gray-200 rounded-lg focus:outline-none focus:border-emerald-500 focus:bg-gray-50"
             />
           </div>
 
           {/* Notifications */}
-          <button className="relative p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+          <button className="relative p-2 transition-colors bg-gray-100 rounded-lg hover:bg-gray-200">
             <Bell size={20} className="text-gray-600" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+            <span className="absolute w-2 h-2 bg-red-500 rounded-full top-1 right-1"></span>
           </button>
 
           {/* Settings */}
-          <button className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+          <button className="p-2 transition-colors bg-gray-100 rounded-lg hover:bg-gray-200">
             <Settings size={20} className="text-gray-600" />
           </button>
         </div>
@@ -85,7 +151,7 @@ export const InstructorDashboard = () => {
       <main className="flex-1 overflow-y-auto">
         
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 gap-6 mb-8 sm:grid-cols-2 lg:grid-cols-4">
           {stats.map((stat, index) => {
             const colors = getColorClasses(stat.color);
             return (
@@ -94,7 +160,7 @@ export const InstructorDashboard = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className="bg-white rounded-xl p-6 hover:shadow-lg transition-all border border-gray-100"
+                className="p-6 transition-all bg-white border border-gray-100 rounded-xl hover:shadow-lg"
               >
                 <div className="flex items-center justify-between mb-4">
                   <div className={`p-3 rounded-lg ${colors.bg}`}>
@@ -102,7 +168,7 @@ export const InstructorDashboard = () => {
                   </div>
                   <span className="text-sm font-semibold text-green-600">{stat.change}</span>
                 </div>
-                <h3 className="text-gray-600 text-sm font-medium mb-1">{stat.label}</h3>
+                <h3 className="mb-1 text-sm font-medium text-gray-600">{stat.label}</h3>
                 <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
               </motion.div>
             );
@@ -110,21 +176,21 @@ export const InstructorDashboard = () => {
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 gap-6 mb-8 lg:grid-cols-3">
           
           {/* My Courses Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
+            className="overflow-hidden bg-white border border-gray-100 shadow-sm lg:col-span-2 rounded-xl"
           >
             <div className="p-6 border-b border-gray-100">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-bold text-gray-900">My Courses</h3>
                 <button 
                   onClick={() => navigate('/instructor/courses')}
-                  className="text-emerald-600 hover:text-emerald-700 text-sm font-semibold"
+                  className="text-sm font-semibold text-emerald-600 hover:text-emerald-700"
                 >
                   View All →
                 </button>
@@ -135,22 +201,22 @@ export const InstructorDashboard = () => {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-100 bg-gray-50">
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Course Title</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Students</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Rating</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Revenue</th>
+                    <th className="px-6 py-3 text-xs font-semibold text-left text-gray-600 uppercase">Course Title</th>
+                    <th className="px-6 py-3 text-xs font-semibold text-left text-gray-600 uppercase">Students</th>
+                    <th className="px-6 py-3 text-xs font-semibold text-left text-gray-600 uppercase">Rating</th>
+                    <th className="px-6 py-3 text-xs font-semibold text-left text-gray-600 uppercase">Status</th>
+                    <th className="px-6 py-3 text-xs font-semibold text-left text-gray-600 uppercase">Revenue</th>
                   </tr>
                 </thead>
                 <tbody>
                   {myCourses.slice(0, 4).map((course, index) => (
-                    <tr key={index} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 text-sm text-gray-900 font-medium">{course.title}</td>
+                    <tr key={index} className="transition-colors border-b border-gray-100 hover:bg-gray-50">
+                      <td className="px-6 py-4 text-sm font-medium text-gray-900">{course.title}</td>
                       <td className="px-6 py-4 text-sm text-gray-600">{course.students}</td>
                       <td className="px-6 py-4 text-sm">
                         <div className="flex items-center gap-1">
-                          <Star size={14} className="fill-yellow-400 text-yellow-400" />
-                          <span className="text-gray-900 font-semibold">{course.rating}</span>
+                          <Star size={14} className="text-yellow-400 fill-yellow-400" />
+                          <span className="font-semibold text-gray-900">{course.rating}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm">
@@ -175,7 +241,7 @@ export const InstructorDashboard = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
-            className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
+            className="overflow-hidden bg-white border border-gray-100 shadow-sm rounded-xl"
           >
             <div className="p-6 border-b border-gray-100">
               <h3 className="text-lg font-bold text-gray-900">Recent Activity</h3>
@@ -184,10 +250,10 @@ export const InstructorDashboard = () => {
             <div className="p-4 space-y-4">
               {recentActivity.map((activity, index) => (
                 <div key={index} className="flex gap-3 pb-4 border-b border-gray-100 last:border-0">
-                  <div className="flex-shrink-0 w-2 h-2 mt-2 bg-emerald-600 rounded-full"></div>
+                  <div className="flex-shrink-0 w-2 h-2 mt-2 rounded-full bg-emerald-600"></div>
                   <div className="flex-1">
                     <p className="text-sm text-gray-900">{activity.message}</p>
-                    <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
+                    <p className="mt-1 text-xs text-gray-500">{activity.time}</p>
                   </div>
                 </div>
               ))}
@@ -200,7 +266,7 @@ export const InstructorDashboard = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
-          className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
+          className="overflow-hidden bg-white border border-gray-100 shadow-sm rounded-xl"
         >
           <div className="p-6 border-b border-gray-100">
             <h3 className="text-lg font-bold text-gray-900">Upcoming Sessions</h3>
@@ -210,25 +276,25 @@ export const InstructorDashboard = () => {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50">
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Session Title</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Date & Time</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Students</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Duration</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Action</th>
+                  <th className="px-6 py-3 text-xs font-semibold text-left text-gray-600 uppercase">Session Title</th>
+                  <th className="px-6 py-3 text-xs font-semibold text-left text-gray-600 uppercase">Date & Time</th>
+                  <th className="px-6 py-3 text-xs font-semibold text-left text-gray-600 uppercase">Students</th>
+                  <th className="px-6 py-3 text-xs font-semibold text-left text-gray-600 uppercase">Duration</th>
+                  <th className="px-6 py-3 text-xs font-semibold text-left text-gray-600 uppercase">Action</th>
                 </tr>
               </thead>
               <tbody>
                 {upcomingSessions.map((session, index) => (
-                  <tr key={index} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 text-sm text-gray-900 font-medium">{session.title}</td>
+                  <tr key={index} className="transition-colors border-b border-gray-100 hover:bg-gray-50">
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{session.title}</td>
                     <td className="px-6 py-4 text-sm text-gray-600">{session.time}</td>
                     <td className="px-6 py-4 text-sm text-gray-900">{session.students}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600 flex items-center gap-1">
+                    <td className="flex items-center gap-1 px-6 py-4 text-sm text-gray-600">
                       <Clock size={14} />
                       {session.duration}
                     </td>
                     <td className="px-6 py-4 text-sm">
-                      <button className="text-emerald-600 hover:text-emerald-700 font-semibold text-xs">
+                      <button className="text-xs font-semibold text-emerald-600 hover:text-emerald-700">
                         View Details
                       </button>
                     </td>

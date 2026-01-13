@@ -1,104 +1,150 @@
 import { motion } from "framer-motion";
 import { 
-  Plus, Search, Edit, Trash2, Eye, Copy,
-  BookOpen, Users, DollarSign, Star,
+  Search, Edit, Trash2, Eye,
+  BookOpen, DollarSign, Star,
   CheckCircle, Clock, Download
 } from "lucide-react";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import CourseService from "../../services/course.service";
+import { AdminCourseModal } from "../../components/admin/AdminCourseModal";
+
+interface Course {
+  _id: string;
+  id?: string;
+  title: string;
+  instructorName: string;
+  instructor?: string;
+  description?: string;
+  enrolledCount?: number;
+  students?: number;
+  rating?: number;
+  status?: string;
+  revenue?: number | string;
+  lastUpdated?: string;
+  thumbnail?: string;
+  price?: number;
+  lessons?: number;
+  duration?: string;
+  category?: string;
+}
 
 export const CourseManagement = () => {
-  const navigate = useNavigate();
   const [viewMode, setViewMode] = useState("grid"); // grid or list
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedCourse, setSelectedCourse] = useState<any>(null);
+  const [modalView, setModalView] = useState<'edit' | 'view'>('view');
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Mock Course Data
-  const courses = [
-    {
-      id: 1,
-      title: "Advanced React & TypeScript Mastery",
-      instructor: "Sarah Chen",
-      thumbnail: "https://images.unsplash.com/photo-1633356122544-f134324ef6db?w=400&q=80",
-      price: 99,
-      students: 234,
-      rating: 4.9,
-      lessons: 156,
-      duration: "32 hours",
-      status: "published",
-      revenue: "$23,166",
-      lastUpdated: "2 days ago",
-      category: "Web Development"
-    },
-    {
-      id: 2,
-      title: "Full-Stack Web Development",
-      instructor: "James Wilson",
-      thumbnail: "https://images.unsplash.com/photo-1629904853716-6b03184ec0a5?w=400&q=80",
-      price: 119,
-      students: 189,
-      rating: 4.8,
-      lessons: 234,
-      duration: "48 hours",
-      status: "published",
-      revenue: "$22,491",
-      lastUpdated: "5 days ago",
-      category: "Web Development"
-    },
-    {
-      id: 3,
-      title: "JavaScript ES6+ Complete Guide",
-      instructor: "Mike Johnson",
-      thumbnail: "https://images.unsplash.com/photo-1579468118864-1b9ea3c0db4a?w=400&q=80",
-      price: 79,
-      students: 421,
-      rating: 4.7,
-      lessons: 128,
-      duration: "28 hours",
-      status: "published",
-      revenue: "$33,259",
-      lastUpdated: "1 week ago",
-      category: "Programming"
-    },
-    {
-      id: 4,
-      title: "Node.js Backend Masterclass",
-      instructor: "Emily Davis",
-      thumbnail: "https://images.unsplash.com/photo-1627398242454-45a1465c2479?w=400&q=80",
-      price: 109,
-      students: 167,
-      rating: 4.6,
-      lessons: 98,
-      duration: "25 hours",
-      status: "draft",
-      revenue: "$0",
-      lastUpdated: "3 days ago",
-      category: "Backend"
-    }
-  ];
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        setLoading(true);
+        const coursesData = await CourseService.getAllCourses();
+        const formattedCourses = (coursesData || []).map((course: any) => ({
+          ...course,
+          id: course._id,
+          students: course.enrolledCount || 0,
+          instructor: course.instructorName,
+          revenue: `$${(course.revenue || 0).toLocaleString()}`,
+          status: course.status || "published",
+          rating: course.rating || 4.5,
+          thumbnail: course.thumbnail || "https://images.unsplash.com/photo-1633356122544-f134324ef6db?w=400&q=80",
+          category: course.category || "Web Development"
+        }));
+        setCourses(formattedCourses);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCourses();
+  }, []);
 
   const stats = [
     { label: "Total Courses", value: courses.length, icon: <BookOpen size={20} />, color: "blue" },
     { label: "Published", value: courses.filter(c => c.status === "published").length, icon: <CheckCircle size={20} />, color: "green" },
     { label: "Draft", value: courses.filter(c => c.status === "draft").length, icon: <Clock size={20} />, color: "amber" },
-    { label: "Total Revenue", value: "$78,916", icon: <DollarSign size={20} />, color: "purple" }
+    { label: "Total Revenue", value: `$${courses.reduce((sum, c) => {
+      const rev = typeof c.revenue === 'string' ? parseInt(c.revenue.replace(/[^0-9]/g, '')) : c.revenue || 0;
+      return sum + rev;
+    }, 0).toLocaleString()}`, icon: <DollarSign size={20} />, color: "purple" }
   ];
 
   const filteredCourses = courses.filter(course => {
     const matchesSearch = course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         course.instructor.toLowerCase().includes(searchTerm.toLowerCase());
+                         (course.instructor || course.instructorName || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filterStatus === "all" || course.status === filterStatus;
     return matchesSearch && matchesFilter;
   });
 
-  const handleDelete = (id: number) => {
+  const handleDelete = (id: string) => {
     if (confirm("Are you sure you want to delete this course?")) {
       console.log("Deleting course:", id);
     }
   };
 
-  const handleDuplicate = (id: number) => {
-    console.log("Duplicating course:", id);
+  const handleEditClick = (course: any) => {
+    setSelectedCourse(course);
+    setModalView('edit');
+    setIsModalOpen(true);
+  };
+
+  const handleViewClick = (course: any) => {
+    setSelectedCourse(course);
+    setModalView('view');
+    setIsModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setSelectedCourse(null);
+  };
+
+  const handleCourseUpdated = async () => {
+    // Refresh courses list
+    try {
+      const coursesData = await CourseService.getAllCourses();
+      const formattedCourses = (coursesData || []).map((course: any) => ({
+        ...course,
+        id: course._id,
+        students: course.enrolledCount || 0,
+        instructor: course.instructorName,
+        revenue: `$${(course.revenue || 0).toLocaleString()}`,
+        status: course.status || "published",
+        rating: course.rating || 4.5,
+        thumbnail: course.thumbnail || "https://images.unsplash.com/photo-1633356122544-f134324ef6db?w=400&q=80",
+        category: course.category || "Web Development"
+      }));
+      setCourses(formattedCourses);
+    } catch (err) {
+      console.error('Failed to refresh courses');
+    }
+  };
+
+  const handleCourseDeleted = async () => {
+    // Refresh courses list
+    try {
+      const coursesData = await CourseService.getAllCourses();
+      const formattedCourses = (coursesData || []).map((course: any) => ({
+        ...course,
+        id: course._id,
+        students: course.enrolledCount || 0,
+        instructor: course.instructorName,
+        revenue: `$${(course.revenue || 0).toLocaleString()}`,
+        status: course.status || "published",
+        rating: course.rating || 4.5,
+        thumbnail: course.thumbnail || "https://images.unsplash.com/photo-1633356122544-f134324ef6db?w=400&q=80",
+        category: course.category || "Web Development"
+      }));
+      setCourses(formattedCourses);
+    } catch (err) {
+      console.error('Failed to refresh courses');
+    }
   };
 
   return (
@@ -109,20 +155,13 @@ export const CourseManagement = () => {
         <div className="flex flex-col justify-between gap-4 mb-6 sm:flex-row sm:items-center">
           <div>
             <h1 className="mb-2 text-3xl font-bold text-gray-900">Course Management</h1>
-            <p className="text-gray-600">Manage all your courses, content, and settings</p>
+            <p className="text-gray-600">View, edit, and manage all platform courses</p>
           </div>
           
           <div className="flex gap-3">
             <button className="flex items-center gap-2 px-4 py-2 font-semibold text-gray-700 transition-colors bg-white border-2 border-gray-200 rounded-lg hover:border-blue-600">
               <Download size={18} />
               Export
-            </button>
-            <button 
-              onClick={() => navigate("/admin/courses/new")}
-              className="flex items-center gap-2 px-6 py-2 font-semibold text-white transition-colors bg-blue-600 rounded-lg shadow-md hover:bg-blue-700"
-            >
-              <Plus size={18} />
-              Add New Course
             </button>
           </div>
         </div>
@@ -221,12 +260,35 @@ export const CourseManagement = () => {
         </div>
       </div>
 
+      {/* Loading State */}
+      {loading && (
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <div className="inline-block w-12 h-12 mb-4 border-4 border-gray-200 rounded-full border-t-blue-600 animate-spin"></div>
+            <p className="text-gray-600">Loading courses...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && !loading && (
+        <div className="p-6 border-2 border-red-200 bg-red-50 rounded-xl">
+          <p className="mb-4 text-red-700">Error loading courses: {error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 font-semibold text-white transition-colors bg-red-600 rounded-lg hover:bg-red-700"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
       {/* Course Grid/List */}
-      {viewMode === "grid" ? (
+      {!loading && !error && (viewMode === "grid" ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredCourses.map((course, index) => (
             <motion.div
-              key={course.id}
+              key={course._id || course.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
@@ -286,26 +348,20 @@ export const CourseManagement = () => {
                 {/* Actions */}
                 <div className="flex gap-2">
                   <button 
-                    onClick={() => navigate(`/admin/courses/${course.id}`)}
+                    onClick={() => handleEditClick(course)}
                     className="flex items-center justify-center flex-1 gap-2 px-3 py-2 text-sm font-semibold text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700"
                   >
                     <Edit size={16} />
                     Edit
                   </button>
                   <button 
-                    onClick={() => navigate(`/courses/${course.id}`)}
+                    onClick={() => handleViewClick(course)}
                     className="px-3 py-2 text-gray-700 transition-colors bg-gray-100 rounded-lg hover:bg-gray-200"
                   >
                     <Eye size={16} />
                   </button>
                   <button 
-                    onClick={() => handleDuplicate(course.id)}
-                    className="px-3 py-2 text-gray-700 transition-colors bg-gray-100 rounded-lg hover:bg-gray-200"
-                  >
-                    <Copy size={16} />
-                  </button>
-                  <button 
-                    onClick={() => handleDelete(course.id)}
+                    onClick={() => handleDelete(course._id)}
                     className="px-3 py-2 text-red-600 transition-colors bg-red-100 rounded-lg hover:bg-red-200"
                   >
                     <Trash2 size={16} />
@@ -332,7 +388,7 @@ export const CourseManagement = () => {
             </thead>
             <tbody>
               {filteredCourses.map((course) => (
-                <tr key={course.id} className="transition-colors border-b border-gray-200 hover:bg-gray-50">
+                <tr key={course._id || course.id} className="transition-colors border-b border-gray-200 hover:bg-gray-50">
                   <td className="p-4">
                     <div className="flex items-center gap-3">
                       <img 
@@ -367,28 +423,21 @@ export const CourseManagement = () => {
                   <td className="p-4">
                     <div className="flex items-center justify-center gap-2">
                       <button 
-                        onClick={() => navigate(`/admin/courses/${course.id}`)}
+                        onClick={() => handleEditClick(course)}
                         className="p-2 text-blue-600 transition-colors bg-blue-100 rounded-lg hover:bg-blue-200"
                         title="Edit"
                       >
                         <Edit size={16} />
                       </button>
                       <button 
-                        onClick={() => navigate(`/courses/${course.id}`)}
+                        onClick={() => handleViewClick(course)}
                         className="p-2 text-gray-600 transition-colors bg-gray-100 rounded-lg hover:bg-gray-200"
                         title="View"
                       >
                         <Eye size={16} />
                       </button>
                       <button 
-                        onClick={() => handleDuplicate(course.id)}
-                        className="p-2 text-gray-600 transition-colors bg-gray-100 rounded-lg hover:bg-gray-200"
-                        title="Duplicate"
-                      >
-                        <Copy size={16} />
-                      </button>
-                      <button 
-                        onClick={() => handleDelete(course.id)}
+                        onClick={() => handleDelete(course._id)}
                         className="p-2 text-red-600 transition-colors bg-red-100 rounded-lg hover:bg-red-200"
                         title="Delete"
                       >
@@ -401,10 +450,10 @@ export const CourseManagement = () => {
             </tbody>
           </table>
         </div>
-      )}
+      ))}
 
       {/* Empty State */}
-      {filteredCourses.length === 0 && (
+      {!loading && !error && filteredCourses.length === 0 && (
         <div className="py-16 text-center bg-white border-2 border-gray-200 rounded-xl">
           <BookOpen className="mx-auto mb-4 text-gray-400" size={48} />
           <h3 className="mb-2 text-xl font-bold text-gray-900">No courses found</h3>
@@ -420,6 +469,16 @@ export const CourseManagement = () => {
           </button>
         </div>
       )}
+
+      {/* Admin Course Modal */}
+      <AdminCourseModal
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        course={selectedCourse}
+        view={modalView}
+        onCourseUpdated={handleCourseUpdated}
+        onDeleted={handleCourseDeleted}
+      />
     </div>
   );
 };
