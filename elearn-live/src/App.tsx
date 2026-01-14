@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { ProtectedInstructorRoute } from "./components/ProtectedInstructorRoute";
 import { ProtectedAdminRoute } from "./components/ProtectedAdminRoute";
+import { ProtectedOrganizationRoute } from "./components/ProtectedOrganizationRoute";
 import { AuthProvider } from "./context/AuthContext";
 import { ToastProvider } from "./context/ToastContext";
 
@@ -17,6 +18,8 @@ import { InstructorVerifyEmail } from "./pages/auth/InstructorVerifyEmail";
 import { InstructorAuthChoice } from "./pages/auth/InstructorAuthChoice";
 import { AdminAuthChoice } from "./pages/auth/AdminAuthChoice";
 import { AdminLogin } from "./pages/auth/AdminLogin";
+import { OrganizationSignup } from "./pages/auth/OrganizationSignup";
+import { OrganizationLogin } from "./pages/auth/OrganizationLogin";
 
 // User Pages
 import { 
@@ -32,20 +35,19 @@ import {
 } from "./pages/user";
 
 // Admin Pages
-import { Payments } from "./pages/admin/Payments";
-import { Settings } from "./pages/admin/Settings";
 import { AdminShell } from "./components/admin/AdminShell";
 
 // Instructor Pages
-import { 
-  InstructorDashboard, 
-  InstructorCourses, 
-  InstructorStudents, 
-  InstructorSessions, 
-  InstructorAnalytics, 
-  InstructorEarnings 
-} from "./pages/instructor";
 import { InstructorShell } from "./components/instructor/InstructorShell";
+import {
+  OrganizationSetup,
+  OrganizationDashboard,
+  InviteInstructor
+} from "./pages/organization";
+
+// Student Pages
+import { StudentLiveClass } from "./pages/student";
+import { StudentShell } from "./components/student";
 
 function App() {
   return (
@@ -74,6 +76,10 @@ function App() {
             {/* Admin Auth Routes */}
             <Route path="/auth/admin/login" element={<AdminLogin />} />
             <Route path="/admin/auth" element={<AdminAuthChoice />} />
+
+            {/* Organization Auth Routes */}
+            <Route path="/auth/organization/signup" element={<OrganizationSignup />} />
+            <Route path="/auth/organization/login" element={<OrganizationLogin />} />
 
             {/* Protected User Routes */}
             <Route
@@ -144,6 +150,53 @@ function App() {
                 </ProtectedInstructorRoute>
               }
             />
+
+            {/* Protected Student Routes */}
+            <Route
+              path="/student/*"
+              element={
+                <ProtectedRoute>
+                  <StudentShell />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Student Live Class Route */}
+            <Route
+              path="/student/live-class/:classId"
+              element={
+                <ProtectedRoute>
+                  <StudentLiveClass />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Organization Routes */}
+            <Route
+              path="/organization/setup"
+              element={
+                <ProtectedOrganizationRoute>
+                  <OrganizationSetup />
+                </ProtectedOrganizationRoute>
+              }
+            />
+            <Route
+              path="/organization/dashboard"
+              element={
+                <ProtectedOrganizationRoute>
+                  <OrganizationDashboard />
+                </ProtectedOrganizationRoute>
+              }
+            />
+            <Route
+              path="/organization/invite"
+              element={
+                <ProtectedOrganizationRoute>
+                  <InviteInstructor />
+                </ProtectedOrganizationRoute>
+              }
+            />
+
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

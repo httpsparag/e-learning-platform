@@ -40,9 +40,12 @@ export const InstructorSignup = () => {
         throw new Error(data.message || 'Registration failed');
       }
 
-      // Save instructorId for verification
-      localStorage.setItem('pendingInstructorId', data.data.instructorId);
-      navigate("/auth/instructor/verify-email", { 
+      // Save instructor token
+      localStorage.setItem('instructorToken', data.data.token);
+      localStorage.setItem('instructorId', data.data.instructorId);
+
+      // Redirect to plan selection
+      navigate("/organization/plan", { 
         state: { 
           email: formData.email,
           instructorId: data.data.instructorId,

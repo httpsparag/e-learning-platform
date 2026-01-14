@@ -10,6 +10,7 @@ export interface IInstructor extends Document {
   expertise?: string[];
   qualifications?: string;
   avatar?: string;
+  organizationId?: mongoose.Types.ObjectId; // Organization owner reference
   bankDetails?: {
     accountName: string;
     accountNumber: string;
@@ -104,6 +105,11 @@ const instructorSchema = new Schema<IInstructor>(
     totalEarnings: {
       type: Number,
       default: 0,
+    },
+    organizationId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Organization',
+      default: null,
     },
   },
   {
