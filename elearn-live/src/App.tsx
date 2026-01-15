@@ -39,10 +39,11 @@ import { AdminShell } from "./components/admin/AdminShell";
 
 // Instructor Pages
 import { InstructorShell } from "./components/instructor/InstructorShell";
+
+// Organization Pages
+import { OrganizationShell } from "./components/organization/OrganizationShell";
 import {
-  OrganizationSetup,
-  OrganizationDashboard,
-  InviteInstructor
+  OrganizationSetup
 } from "./pages/organization";
 
 // Student Pages
@@ -181,18 +182,10 @@ function App() {
               }
             />
             <Route
-              path="/organization/dashboard"
+              path="/organization/*"
               element={
                 <ProtectedOrganizationRoute>
-                  <OrganizationDashboard />
-                </ProtectedOrganizationRoute>
-              }
-            />
-            <Route
-              path="/organization/invite"
-              element={
-                <ProtectedOrganizationRoute>
-                  <InviteInstructor />
+                  <OrganizationShell />
                 </ProtectedOrganizationRoute>
               }
             />

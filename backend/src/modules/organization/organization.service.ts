@@ -2,6 +2,7 @@ import { Organization, IOrganization } from '../../models/organization.model';
 import { Instructor } from '../../models/instructor.model';
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
+import { sendEmail } from '../../utils/email';
 
 interface CreateOrgDTO {
   name: string;
@@ -18,6 +19,7 @@ interface CreateOrgDTO {
 
 interface InviteInstructorDTO {
   organizationId: string;
+  name: string;
   email: string;
   role: 'admin' | 'instructor';
 }
@@ -130,7 +132,7 @@ export class OrganizationService {
 
   // Invite instructor to organization
   async inviteInstructor(data: InviteInstructorDTO): Promise<{ message: string }> {
-    const { organizationId, email, role } = data;
+    const { organizationId, name, email, role } = data;
 
     // Get organization
     const organization = await Organization.findById(organizationId);
@@ -143,25 +145,31 @@ export class OrganizationService {
       throw new Error('Organization has reached maximum instructors limit');
     }
 
-    // Check if instructor already exists in organization
-    const existingInstructor = organization.instructors.find((i) => {
-      // We'll check by email after finding the instructor
-      return i;
-    });
+    // Try to find instructor by email in the database
+    let instructor = await Instructor.findOne({ email });
 
-    // Try to find instructor by email
-    const instructor = await Instructor.findOne({ email });
-
-    if (!instructor) {
-      throw new Error('Instructor not found');
+    // Check if instructor is already in this organization
+    if (instructor) {
+      const alreadyInvited = organization.instructors.some(
+        (i) => i.instructorId.toString() === instructor._id.toString()
+      );
+      if (alreadyInvited) {
+        throw new Error('Instructor with this email is already added to this organization');
+      }
     }
 
-    // Check if already invited
-    const alreadyInvited = organization.instructors.some(
-      (i) => i.instructorId.toString() === instructor._id.toString()
-    );
-    if (alreadyInvited) {
-      throw new Error('Instructor already invited to this organization');
+    // If instructor doesn't exist, create a new instructor
+    if (!instructor) {
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash('TempPassword123!', salt);
+      
+      instructor = await Instructor.create({
+        name: name || email.split('@')[0],
+        email,
+        password: hashedPassword,
+        isEmailVerified: false,
+        status: 'inactive',
+      });
     }
 
     // Add instructor to organization
@@ -174,7 +182,67 @@ export class OrganizationService {
 
     await organization.save();
 
-    return { message: 'Instructor invitation sent successfully' };
+    // Send invitation email
+    try {
+      const invitationUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/instructor/auth`;
+      const emailTemplate = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: #059669; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+            .content { background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
+            .button { display: inline-block; padding: 12px 30px; background: #059669; color: white; text-decoration: none; border-radius: 8px; margin: 20px 0; }
+            .credentials { background: white; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px; margin: 20px 0; }
+            .credentials p { margin: 10px 0; }
+            .footer { text-align: center; margin-top: 20px; color: #6b7280; font-size: 12px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>Welcome to ${organization.name}!</h1>
+            </div>
+            <div class="content">
+              <p>Hi ${name},</p>
+              <p><strong>${organization.name}</strong> has invited you to join their team as an <strong>Instructor</strong>.</p>
+              
+              <div class="credentials">
+                <h3>Your Login Credentials:</h3>
+                <p><strong>Email:</strong> ${email}</p>
+                <p><strong>Temporary Password:</strong> TempPassword123!</p>
+                <p style="color: #dc2626; font-size: 12px;"><em>Note: Please change your password after your first login.</em></p>
+              </div>
+              
+              <p>Click the button below to sign in and get started:</p>
+              <div style="text-align: center;">
+                <a href="${invitationUrl}" class="button">Sign In to Dashboard</a>
+              </div>
+              
+              <p>If you have any questions, please contact your organization administrator.</p>
+              <p>Best regards,<br><strong>EduLearn Team</strong></p>
+            </div>
+            <div class="footer">
+              <p>© 2026 EduLearn Platform. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
+      await sendEmail({
+        to: email,
+        subject: `You're invited to ${organization.name} - EduLearn Instructor Portal`,
+        html: emailTemplate,
+      });
+    } catch (emailError) {
+      console.error('Failed to send invitation email:', emailError);
+      // Don't throw error - the instructor is already added, email sending is secondary
+    }
+
+    return { message: 'Instructor added successfully and invitation email sent' };
   }
 
   // Accept invitation
@@ -257,6 +325,71 @@ export class OrganizationService {
 
     return { message: 'Instructor removed from organization' };
   }
-}
 
-export default new OrganizationService();
+  // Update instructor
+  async updateInstructor(
+    organizationId: string,
+    instructorId: string,
+    data: { name?: string; email?: string }
+  ): Promise<{ message: string; data: any }> {
+    const organization = await Organization.findById(organizationId);
+    if (!organization) {
+      throw new Error('Organization not found');
+    }
+
+    // Find the instructor in the organization
+    const instructor = organization.instructors.find(
+      (i) => i.instructorId.toString() === instructorId
+    );
+
+    if (!instructor) {
+      throw new Error('Instructor not found in this organization');
+    }
+
+    // Update instructor in database
+    const updatedInstructor = await Instructor.findByIdAndUpdate(
+      instructorId,
+      { 
+        ...(data.name && { name: data.name }),
+        ...(data.email && { email: data.email })
+      },
+      { new: true }
+    );
+
+    if (!updatedInstructor) {
+      throw new Error('Failed to update instructor');
+    }
+
+    await organization.save();
+
+    return {
+      message: 'Instructor updated successfully',
+      data: updatedInstructor,
+    };
+  }
+
+  // Delete instructor
+  async deleteInstructor(organizationId: string, instructorId: string): Promise<{ message: string }> {
+    const organization = await Organization.findById(organizationId);
+    if (!organization) {
+      throw new Error('Organization not found');
+    }
+
+    // Check if instructor exists in organization
+    const instructor = organization.instructors.find(
+      (i) => i.instructorId.toString() === instructorId
+    );
+
+    if (!instructor) {
+      throw new Error('Instructor not found in this organization');
+    }
+
+    // Remove instructor from organization
+    organization.instructors = organization.instructors.filter(
+      (i) => i.instructorId.toString() !== instructorId
+    );
+
+    await organization.save();
+
+    return { message: 'Instructor removed from organization successfully' };
+  }

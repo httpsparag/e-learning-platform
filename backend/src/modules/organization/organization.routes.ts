@@ -264,7 +264,7 @@ router.put('/:organizationId', async (req: Request, res: Response, next: NextFun
 router.post('/:organizationId/invite', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { organizationId } = req.params;
-    const { email, role } = req.body;
+    const { name, email, role } = req.body;
     const authHeader = req.headers.authorization;
 
     // Verify token
@@ -307,15 +307,16 @@ router.post('/:organizationId/invite', async (req: Request, res: Response, next:
       });
     }
 
-    if (!email || !role) {
+    if (!name || !email || !role) {
       return res.status(400).json({
         success: false,
-        message: 'Email and role are required',
+        message: 'Name, email and role are required',
       });
     }
 
     const result = await organizationService.inviteInstructor({
       organizationId,
+      name,
       email,
       role,
     });
@@ -406,6 +407,82 @@ router.delete('/:organizationId/team/:instructorId', authenticate, async (req: R
     }
 
     const result = await organizationService.removeInstructor(organizationId, instructorId);
+
+    res.status(200).json({
+      success: true,
+      message: result.message,
+    });
+  } catch (error: any) {
+    next(error);
+  }
+});
+
+// Update instructor
+router.put('/:organizationId/instructors/:instructorId', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { organizationId, instructorId } = req.params;
+    const { name, email } = req.body;
+    const authHeader = req.headers.authorization;
+
+    // Verify token
+    let ownerId: string | null = null;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any;
+        ownerId = decoded.ownerId;
+      } catch (error) {
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid token',
+        });
+      }
+    } else {
+      return res.status(401).json({
+        success: false,
+        message: 'No token provided',
+      });
+    }
+
+    const result = await organizationService.updateInstructor(organizationId, instructorId, { name, email });
+
+    res.status(200).json({
+      success: true,
+      message: result.message,
+      data: result.data,
+    });
+  } catch (error: any) {
+    next(error);
+  }
+});
+
+// Delete instructor
+router.delete('/:organizationId/instructors/:instructorId', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { organizationId, instructorId } = req.params;
+    const authHeader = req.headers.authorization;
+
+    // Verify token
+    let ownerId: string | null = null;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any;
+        ownerId = decoded.ownerId;
+      } catch (error) {
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid token',
+        });
+      }
+    } else {
+      return res.status(401).json({
+        success: false,
+        message: 'No token provided',
+      });
+    }
+
+    const result = await organizationService.deleteInstructor(organizationId, instructorId);
 
     res.status(200).json({
       success: true,

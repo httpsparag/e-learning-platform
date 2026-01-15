@@ -22,6 +22,8 @@ export const InstructorDashboard = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [instructorName, setInstructorName] = useState("");
+  const [instructorEmail, setInstructorEmail] = useState("");
 
   // Fetch instructor courses on mount
   useEffect(() => {
@@ -30,6 +32,12 @@ export const InstructorDashboard = () => {
         setLoading(true);
         const coursesData = await CourseService.getInstructorCourses();
         setCourses(coursesData || []);
+        
+        // Get instructor info from localStorage
+        const name = localStorage.getItem('instructorName') || 'Instructor';
+        const email = localStorage.getItem('instructorEmail') || 'instructor@example.com';
+        setInstructorName(name);
+        setInstructorEmail(email);
       } catch (err: any) {
         console.error('Error fetching courses:', err);
         setError(err.message);
@@ -120,7 +128,7 @@ export const InstructorDashboard = () => {
       <header className="flex items-center justify-between h-20 px-8 mb-8 bg-white shadow-sm rounded-xl">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Dashboard</h2>
-          <p className="text-sm text-gray-600">Welcome back, Instructor! Here's your teaching overview.</p>
+          <p className="text-sm text-gray-600">Welcome back, {instructorName}! Here's your teaching overview.</p>
         </div>
 
         <div className="flex items-center gap-4">

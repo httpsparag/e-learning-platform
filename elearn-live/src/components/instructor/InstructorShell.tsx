@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Menu, X, Home, BookOpen, Users, Video, BarChart3, DollarSign, LogOut } from "lucide-react";
+import { Menu, X, Home, BookOpen, Users, Video, BarChart3, DollarSign, LogOut, User } from "lucide-react";
 import { useState, useEffect } from "react";
 import { InstructorDashboard } from "../../pages/instructor/InstructorDashboard";
 import { InstructorCourses } from "../../pages/instructor/InstructorCourses";
@@ -7,6 +7,7 @@ import { InstructorStudents } from "../../pages/instructor/InstructorStudents";
 import { InstructorSessions } from "../../pages/instructor/InstructorSessions";
 import { InstructorAnalytics } from "../../pages/instructor/InstructorAnalytics";
 import { InstructorEarnings } from "../../pages/instructor/InstructorEarnings";
+import { InstructorProfile } from "../../pages/instructor/InstructorProfile";
 
 export function InstructorShell() {
   const navigate = useNavigate();
@@ -16,6 +17,7 @@ export function InstructorShell() {
 
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: <Home size={20} />, path: "/instructor" },
+    { id: "profile", label: "My Profile", icon: <User size={20} />, path: "/instructor/profile" },
     { id: "courses", label: "My Courses", icon: <BookOpen size={20} />, path: "/instructor/courses" },
     { id: "students", label: "My Students", icon: <Users size={20} />, path: "/instructor/students" },
     { id: "sessions", label: "My Sessions", icon: <Video size={20} />, path: "/instructor/sessions" },
@@ -38,6 +40,8 @@ export function InstructorShell() {
       setActiveMenu("analytics");
     } else if (currentPath.includes("earnings")) {
       setActiveMenu("earnings");
+    } else if (currentPath.includes("profile")) {
+      setActiveMenu("profile");
     }
   }, [location.pathname]);
 
@@ -54,6 +58,7 @@ export function InstructorShell() {
   const renderContent = () => {
     const path = location.pathname;
     if (path === "/instructor" || path === "/instructor/") return <InstructorDashboard />;
+    if (path === "/instructor/profile") return <InstructorProfile />;
     if (path === "/instructor/courses") return <InstructorCourses />;
     if (path === "/instructor/students") return <InstructorStudents />;
     if (path === "/instructor/sessions") return <InstructorSessions />;

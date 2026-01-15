@@ -1,3 +1,5 @@
 export { OrganizationSetup } from './OrganizationSetup';
 export { OrganizationDashboard } from './OrganizationDashboard';
-export { InviteInstructor } from './InviteInstructor';
+export { OrganizationTeam } from './OrganizationTeam';
+export { OrganizationCourses } from './OrganizationCourses';
+export { OrganizationSettings } from './OrganizationSettings';
