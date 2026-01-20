@@ -3,6 +3,7 @@ import { Instructor } from '../../models/instructor.model';
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import { sendEmail } from '../../utils/email';
+import { generateTemporaryPassword } from '../../utils/passwordGenerator';
 
 interface CreateOrgDTO {
   name: string;
@@ -47,11 +48,11 @@ export class OrganizationService {
       
       if (!instructor) {
         // Create a temporary instructor for standalone organization
-        const hashedPassword = await bcrypt.hash(ownerPassword || 'temporary', 10);
+        // Pass plain password - pre-save hook will hash it
         instructor = await Instructor.create({
           name: ownerName || 'Organization Owner',
           email: ownerEmail,
-          password: hashedPassword,
+          password: ownerPassword || 'temporary', // Plain text - pre-save hook will hash
         });
       }
       
@@ -104,13 +105,17 @@ export class OrganizationService {
     });
 
     // Update instructor with organizationId
-    await Instructor.findByIdAndUpdate(ownerId, { organizationId: organization._id });
+    await Instructor.findByIdAndUpdate(finalOwnerId, { organizationId: organization._id });
 
     return organization;
   }
 
   // Get organization by ID
   async getOrganization(organizationId: string): Promise<IOrganization | null> {
+    // Validate if it's a valid MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(organizationId)) {
+      return null;
+    }
     return await Organization.findById(organizationId)
       .populate('ownerId', 'name email avatar')
       .populate('instructors.instructorId', 'name email avatar');
@@ -147,31 +152,34 @@ export class OrganizationService {
 
     // Try to find instructor by email in the database
     let instructor = await Instructor.findOne({ email });
-
     // Check if instructor is already in this organization
     if (instructor) {
       const alreadyInvited = organization.instructors.some(
-        (i) => i.instructorId.toString() === instructor._id.toString()
+        (i) => i.instructorId.toString() === (instructor as any)._id.toString()
       );
       if (alreadyInvited) {
         throw new Error('Instructor with this email is already added to this organization');
       }
     }
+    // Generate unique temporary password for this invitation
+    const temporaryPassword = generateTemporaryPassword();
 
     // If instructor doesn't exist, create a new instructor
     if (!instructor) {
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash('TempPassword123!', salt);
-      
       instructor = await Instructor.create({
         name: name || email.split('@')[0],
         email,
-        password: hashedPassword,
+        password: temporaryPassword, // Unique password for this invitation - will be hashed by pre-save hook
         isEmailVerified: false,
         status: 'inactive',
       });
+    } else {
+      // Instructor already exists in another organization, update their existing record if needed
+      // Update password with new temporary password for new invitation
+      instructor.password = temporaryPassword;
+      instructor.status = 'inactive';
+      await instructor.save();
     }
-
     // Add instructor to organization
     organization.instructors.push({
       instructorId: instructor._id,
@@ -184,7 +192,7 @@ export class OrganizationService {
 
     // Send invitation email
     try {
-      const invitationUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/instructor/auth`;
+      const invitationUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/auth/instructor/login?email=${encodeURIComponent(email)}`;
       const emailTemplate = `
         <!DOCTYPE html>
         <html>
@@ -212,7 +220,7 @@ export class OrganizationService {
               <div class="credentials">
                 <h3>Your Login Credentials:</h3>
                 <p><strong>Email:</strong> ${email}</p>
-                <p><strong>Temporary Password:</strong> TempPassword123!</p>
+                <p><strong>Temporary Password:</strong> ${temporaryPassword}</p>
                 <p style="color: #dc2626; font-size: 12px;"><em>Note: Please change your password after your first login.</em></p>
               </div>
               
@@ -232,13 +240,17 @@ export class OrganizationService {
         </html>
       `;
 
+      console.log(`📧 Sending invitation email to: ${email} for organization: ${organization.name}`);
+      
       await sendEmail({
         to: email,
         subject: `You're invited to ${organization.name} - EduLearn Instructor Portal`,
         html: emailTemplate,
       });
+      
+      console.log(`✅ Invitation email sent successfully to: ${email}`);
     } catch (emailError) {
-      console.error('Failed to send invitation email:', emailError);
+      console.error(`❌ Failed to send invitation email to ${email}:`, emailError);
       // Don't throw error - the instructor is already added, email sending is secondary
     }
 
@@ -391,5 +403,11 @@ export class OrganizationService {
 
     await organization.save();
 
+    // Also delete the instructor from the Instructor collection
+    await Instructor.findByIdAndDelete(instructorId);
+
     return { message: 'Instructor removed from organization successfully' };
   }
+}
+
+export default new OrganizationService();

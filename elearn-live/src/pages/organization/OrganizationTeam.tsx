@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Users, Plus, Edit2, Trash2 } from "lucide-react";
-import { motion } from "framer-motion";
+import { Users, Plus, Edit2, Trash2, CheckCircle, AlertCircle } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { InviteInstructorModal } from "../../components/organization/InviteInstructorModal";
 import { EditInstructorModal } from "../../components/organization/EditInstructorModal";
 import { DeleteInstructorModal } from "../../components/organization/DeleteInstructorModal";
@@ -25,6 +25,12 @@ interface Organization {
   instructors: Instructor[];
 }
 
+interface Toast {
+  id: string;
+  type: "success" | "error";
+  message: string;
+}
+
 export const OrganizationTeam = () => {
   const navigate = useNavigate();
   const [organization, setOrganization] = useState<Organization | null>(null);
@@ -35,9 +41,25 @@ export const OrganizationTeam = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedInstructor, setSelectedInstructor] = useState<Instructor | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [toasts, setToasts] = useState<Toast[]>([]);
+
+  const addToast = (type: "success" | "error", message: string) => {
+    const id = Date.now().toString();
+    setToasts((prev) => [...prev, { id, type, message }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 3000);
+  };
 
   useEffect(() => {
     fetchOrganization();
+    
+    // Auto-refresh organization data every 10 seconds to show real-time status updates
+    const interval = setInterval(() => {
+      fetchOrganization();
+    }, 10000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   const fetchOrganization = async () => {
@@ -129,9 +151,11 @@ export const OrganizationTeam = () => {
         throw new Error(result.message || "Failed to update instructor");
       }
 
+      addToast("success", "Instructor updated successfully");
       await fetchOrganization();
     } catch (err: any) {
       console.error('Edit error:', err);
+      addToast("error", err.message || "Failed to update instructor");
       throw new Error(err.message);
     }
   };
@@ -165,11 +189,14 @@ export const OrganizationTeam = () => {
         throw new Error(result.message || "Failed to delete instructor");
       }
 
+      addToast("success", "Instructor deleted successfully");
       setIsDeleteModalOpen(false);
       setSelectedInstructor(null);
       await fetchOrganization();
     } catch (err: any) {
       console.error('Delete error:', err.message);
+      addToast("error", err.message || "Failed to delete instructor");
+    } finally {
       setDeleteLoading(false);
     }
   };
@@ -307,7 +334,7 @@ export const OrganizationTeam = () => {
                           setSelectedInstructor(instructor);
                           setIsEditModalOpen(true);
                         }}
-                        className="inline-flex items-center gap-1 px-3 py-1 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors font-medium"
+                        className="inline-flex items-center gap-1 px-3 py-1 font-medium transition-colors rounded-lg text-emerald-600 hover:bg-emerald-50"
                       >
                         <Edit2 size={16} />
                         Edit
@@ -317,7 +344,7 @@ export const OrganizationTeam = () => {
                           setSelectedInstructor(instructor);
                           setIsDeleteModalOpen(true);
                         }}
-                        className="inline-flex items-center gap-1 px-3 py-1 rounded-lg text-red-600 hover:bg-red-50 transition-colors font-medium"
+                        className="inline-flex items-center gap-1 px-3 py-1 font-medium text-red-600 transition-colors rounded-lg hover:bg-red-50"
                       >
                         <Trash2 size={16} />
                         Delete
@@ -366,6 +393,36 @@ export const OrganizationTeam = () => {
           loading={deleteLoading}
         />
       )}
+
+      {/* Toast Notifications */}
+      <AnimatePresence>
+        {toasts.map((toast) => (
+          <motion.div
+            key={toast.id}
+            initial={{ opacity: 0, x: 400 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 400 }}
+            className={`fixed bottom-4 right-4 flex items-start gap-3 p-4 rounded-lg shadow-lg ${
+              toast.type === "success"
+                ? "bg-green-50 border border-green-200"
+                : "bg-red-50 border border-red-200"
+            }`}
+          >
+            {toast.type === "success" ? (
+              <CheckCircle className="text-green-600 mt-0.5 shrink-0" size={20} />
+            ) : (
+              <AlertCircle className="text-red-600 mt-0.5 shrink-0" size={20} />
+            )}
+            <p
+              className={
+                toast.type === "success" ? "text-green-800 text-sm" : "text-red-800 text-sm"
+              }
+            >
+              {toast.message}
+            </p>
+          </motion.div>
+        ))}
+      </AnimatePresence>
     </div>
   );
 };

@@ -62,6 +62,13 @@ router.get(
     InstructorAuthController.getMe(req, res, next)
 );
 
+router.get(
+  '/instructor/:id',
+  instructorAuth,
+  (req: AuthRequest, res: Response, next: NextFunction) =>
+    InstructorAuthController.getInstructorProfile(req, res, next)
+);
+
 router.patch(
   '/instructor/profile',
   instructorAuth,

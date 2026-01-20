@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import organizationService from './organization.service';
 import { authenticate } from '../../middlewares/auth.middleware';
 import { Organization } from '../../models/organization.model';
+import { Instructor } from '../../models/instructor.model';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 
@@ -19,11 +20,7 @@ router.post('/signup', async (req: Request, res: Response, next: NextFunction) =
       });
     }
 
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    // Create organization with owner details
+    // Pass plain password to service - let pre-save hook handle hashing
     const organization = await organizationService.createOrganization({
       name: organizationName,
       ownerId: undefined as any, // Will be set by service
@@ -34,12 +31,12 @@ router.post('/signup', async (req: Request, res: Response, next: NextFunction) =
       website,
       ownerName,
       ownerEmail,
-      ownerPassword: hashedPassword,
+      ownerPassword: password, // Plain password - will be hashed by pre-save hook
     });
 
     // Generate JWT token
     const token = jwt.sign(
-      { organizationId: organization._id, ownerId: organization.ownerId, email: ownerEmail },
+      { organizationId: organization._id.toString(), ownerId: organization.ownerId.toString(), email: ownerEmail },
       process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '30d' }
     );
@@ -49,8 +46,8 @@ router.post('/signup', async (req: Request, res: Response, next: NextFunction) =
       message: 'Organization created successfully',
       data: {
         token,
-        organizationId: organization._id,
-        ownerId: organization.ownerId,
+        organizationId: organization._id.toString(),
+        ownerId: organization.ownerId.toString(),
         organizationName: organization.name,
       },
     });
@@ -93,7 +90,7 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
 
     // Generate JWT token
     const token = jwt.sign(
-      { organizationId: organization._id, ownerId: organization.ownerId, email },
+      { organizationId: organization._id.toString(), ownerId: organization.ownerId.toString(), email },
       process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '30d' }
     );
@@ -103,8 +100,8 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
       message: 'Login successful',
       data: {
         token,
-        organizationId: organization._id,
-        ownerId: organization.ownerId,
+        organizationId: organization._id.toString(),
+        ownerId: organization.ownerId.toString(),
         organizationName: organization.name,
       },
     });
@@ -314,6 +311,8 @@ router.post('/:organizationId/invite', async (req: Request, res: Response, next:
       });
     }
 
+    console.log(`📨 Invite request received - Email: ${email}, Name: ${name}, Role: ${role}`);
+
     const result = await organizationService.inviteInstructor({
       organizationId,
       name,
@@ -493,4 +492,5 @@ router.delete('/:organizationId/instructors/:instructorId', async (req: Request,
   }
 });
 
+// Fix instructor password - directly update in DB without pre-save hook
 export default router;

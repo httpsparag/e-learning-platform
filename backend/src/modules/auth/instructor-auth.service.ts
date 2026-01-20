@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { Instructor, IInstructor } from '../../models/instructor.model';
+import { Organization } from '../../models/organization.model';
 import redisClient from '../../config/redis';
 import { sendEmail, getVerificationEmailTemplate, getPasswordResetEmailTemplate } from '../../utils/email';
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../../utils/jwt';
@@ -133,37 +134,57 @@ export class InstructorAuthService {
     };
   }
 
-  // LOGIN INSTRUCTOR
+  // LOGIN INSTRUCTOR - Organization Invitation Based
+  // Flow: Organization sends email with temporary password to instructor
+  // Instructor logs in with email + temporary password from email
   async login(data: LoginDTO) {
     const { email, password } = data;
 
+    if (!email || !password) {
+      throw new Error('Email and password are required');
+    }
+
     // Find instructor by email
-    const instructor = await Instructor.findOne({ email }).select('+password');
+    const instructor = await Instructor.findOne({ email: email.toLowerCase().trim() }).select('+password');
 
     if (!instructor) {
-      throw new Error('Invalid email or password');
+      throw new Error('Instructor not found. Please check your email and try again.');
     }
 
-    // Check if email is verified
-    if (!instructor.isEmailVerified) {
-      throw new Error('Please verify your email first');
-    }
-
-    // Check if instructor account is active
-    if (instructor.status !== 'active') {
-      throw new Error('Your instructor account is inactive or suspended');
-    }
-
-    // Compare password
+    // Verify password (temporary password from invitation email)
     const isPasswordValid = await instructor.comparePassword(password);
+    
     if (!isPasswordValid) {
-      throw new Error('Invalid email or password');
+      throw new Error('Incorrect password. Please use the password from your invitation email.');
+    }
+
+    // Allow login for both active and inactive instructors (newly invited)
+    if (instructor.status === 'suspended') {
+      throw new Error('Your instructor account has been suspended');
+    }
+
+    // Update status to active on first successful login if inactive
+    if (instructor.status === 'inactive') {
+      instructor.status = 'active';
+      instructor.isEmailVerified = true;
+      await instructor.save();
+
+      // Also update the status in the organization's instructor list
+      await Organization.findOneAndUpdate(
+        { 'instructors.instructorId': instructor._id },
+        { 
+          $set: { 
+            'instructors.$.status': 'active',
+            'instructors.$.joinedAt': new Date()
+          } 
+        }
+      );
     }
 
     // Generate tokens
     const accessToken = generateAccessToken({
       id: instructor._id.toString(),
-      role: 'instructor', // Always 'instructor' for instructor login
+      role: 'instructor',
     });
 
     const refreshToken = generateRefreshToken({
@@ -171,7 +192,7 @@ export class InstructorAuthService {
       role: 'instructor',
     });
 
-    // Return user data (without password)
+    // Return user data
     const instructorData = {
       id: instructor._id.toString(),
       name: instructor.name,

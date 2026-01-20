@@ -25,7 +25,7 @@ export const InstructorDashboard = () => {
   const [instructorName, setInstructorName] = useState("");
   const [instructorEmail, setInstructorEmail] = useState("");
 
-  // Fetch instructor courses on mount
+  // Fetch instructor courses on mount and set up auto-refresh
   useEffect(() => {
     const fetchCourses = async () => {
       try {
@@ -47,6 +47,13 @@ export const InstructorDashboard = () => {
     };
 
     fetchCourses();
+    
+    // Auto-refresh courses every 15 seconds for real-time updates
+    const interval = setInterval(() => {
+      fetchCourses();
+    }, 15000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   // Calculate dynamic stats from courses

@@ -116,6 +116,25 @@ export class InstructorAuthController {
     }
   }
 
+  // GET /api/instructor/:id
+  async getInstructorProfile(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+
+      if (!id) {
+        return sendError(res, 400, 'Instructor ID is required');
+      }
+
+      const result = await InstructorAuthService.getMe(id);
+      if (!result.instructor) {
+        return sendError(res, 404, 'Instructor profile not found');
+      }
+      return sendSuccess(res, 200, 'Instructor profile retrieved', result.instructor);
+    } catch (error: any) {
+      return sendError(res, 404, 'Instructor profile not found');
+    }
+  }
+
   // PATCH /api/instructor/profile
   async updateProfile(req: AuthRequest, res: Response, next: NextFunction) {
     try {

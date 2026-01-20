@@ -124,6 +124,15 @@ instructorSchema.pre('save', async function (next) {
   }
 
   try {
+    // Check if password is already hashed (bcrypt hashes start with $2a$, $2b$, or $2y$)
+    const isBcryptHash = /^\$2[aby]\$\d{2}\$/.test(this.password || '');
+    
+    if (isBcryptHash) {
+      // Password is already hashed, don't hash again
+      return next();
+    }
+    
+    // Password is plain text, hash it
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
     next();

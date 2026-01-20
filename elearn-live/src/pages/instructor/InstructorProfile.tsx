@@ -37,7 +37,7 @@ export const InstructorProfile = () => {
       }
 
       const response = await fetch(
-        `http://localhost:5000/api/instructor/${instructorId}`,
+        `http://localhost:5000/api/auth/instructor/${instructorId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -48,12 +48,20 @@ export const InstructorProfile = () => {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Failed to fetch profile");
+        // Check if it's a 404 (profile deleted)
+        if (response.status === 404) {
+          setError("Your profile no longer exists. Please contact your organization for more information.");
+          setProfile(null);
+        } else {
+          throw new Error(data.message || "Failed to fetch profile");
+        }
+      } else {
+        setProfile(data.data);
+        setError("");
       }
-
-      setProfile(data.data);
     } catch (err: any) {
       setError(err.message);
+      setProfile(null);
     } finally {
       setLoading(false);
     }
@@ -76,9 +84,19 @@ export const InstructorProfile = () => {
         <div className="max-w-md p-8 bg-white rounded-lg shadow-md">
           <AlertCircle className="mb-4 text-red-600 mx-auto" size={32} />
           <h2 className="mb-2 text-xl font-bold text-gray-900 text-center">
-            Profile Not Found
+            {error.includes("no longer exists") ? "Profile Deleted" : "Profile Not Found"}
           </h2>
-          <p className="text-center text-gray-600">{error}</p>
+          <p className="text-center text-gray-600 mb-6">{error}</p>
+          <button
+            onClick={() => {
+              localStorage.removeItem("instructorId");
+              localStorage.removeItem("accessToken");
+              navigate("/instructor/auth");
+            }}
+            className="w-full px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+          >
+            Return to Login
+          </button>
         </div>
       </div>
     );
