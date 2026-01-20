@@ -1,7 +1,8 @@
-import { motion } from "framer-motion";
-import { Search, Filter, Mail, Award, TrendingUp } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Search, Filter, Mail, Award, TrendingUp, Plus, CheckCircle, AlertCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import CourseService from "../../services/course.service";
+import { AddStudentModal } from "../../components/instructor/AddStudentModal";
 
 interface Student {
   id: string;
@@ -23,6 +24,12 @@ interface Course {
   revenue: number;
 }
 
+interface Toast {
+  id: string;
+  type: "success" | "error";
+  message: string;
+}
+
 export const InstructorStudents = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCourse, setFilterCourse] = useState("all");
@@ -31,8 +38,18 @@ export const InstructorStudents = () => {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAddStudentModalOpen, setIsAddStudentModalOpen] = useState(false);
+  const [toasts, setToasts] = useState<Toast[]>([]);
 
-  // Fetch instructor courses on mount
+  const addToast = (type: "success" | "error", message: string) => {
+    const id = Date.now().toString();
+    setToasts((prev) => [...prev, { id, type, message }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 3000);
+  };
+
+  // Fetch instructor courses on mount and set up auto-refresh
   useEffect(() => {
     const fetchCourses = async () => {
       try {
@@ -113,6 +130,50 @@ export const InstructorStudents = () => {
     setStudents(generatedStudents);
   };
 
+  const handleAddStudent = async (data: { name: string; email: string; courseId: string }) => {
+    try {
+      const instructorId = localStorage.getItem("instructorId");
+      const token = localStorage.getItem("accessToken");
+
+      if (!instructorId || !token) {
+        throw new Error("Not authenticated");
+      }
+
+      const response = await fetch(
+        `http://localhost:5000/api/course/${data.courseId}/enroll-student`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            studentName: data.name,
+            studentEmail: data.email,
+            instructorId: instructorId,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to add student");
+      }
+
+      addToast("success", `${data.name} has been invited to the course!`);
+      
+      // Refresh courses to update student count
+      const coursesData = await CourseService.getInstructorCourses();
+      setCourses(coursesData || []);
+      generateStudentsFromCourses(coursesData || []);
+    } catch (err: any) {
+      console.error('Add student error:', err);
+      addToast("error", err.message || "Failed to add student");
+      throw new Error(err.message);
+    }
+  };
+
   const courseList = ["All Courses", ...courses.map(c => c.title)];
 
   const filteredStudents = students.filter(student => {
@@ -157,11 +218,18 @@ export const InstructorStudents = () => {
   return (
     <div className="w-full">
       {/* Header */}
-      <div className="mb-8">
+      <div className="flex items-center justify-between mb-8">
         <div>
           <h2 className="text-3xl font-bold text-gray-900">My Students</h2>
           <p className="mt-1 text-gray-600">Track and manage all your students</p>
         </div>
+        <button
+          onClick={() => setIsAddStudentModalOpen(true)}
+          className="flex items-center gap-2 px-4 py-2 font-medium text-white transition-colors rounded-lg bg-emerald-600 hover:bg-emerald-700"
+        >
+          <Plus size={20} />
+          Add Student
+        </button>
       </div>
 
       {/* Summary Stats */}
@@ -356,6 +424,44 @@ export const InstructorStudents = () => {
         </div>
         )}
       </motion.div>
+
+      {/* Add Student Modal */}
+      <AddStudentModal
+        isOpen={isAddStudentModalOpen}
+        courses={courses}
+        onClose={() => setIsAddStudentModalOpen(false)}
+        onAddStudent={handleAddStudent}
+      />
+
+      {/* Toast Notifications */}
+      <AnimatePresence>
+        {toasts.map((toast) => (
+          <motion.div
+            key={toast.id}
+            initial={{ opacity: 0, x: 400 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 400 }}
+            className={`fixed bottom-4 right-4 flex items-start gap-3 p-4 rounded-lg shadow-lg ${
+              toast.type === "success"
+                ? "bg-green-50 border border-green-200"
+                : "bg-red-50 border border-red-200"
+            }`}
+          >
+            {toast.type === "success" ? (
+              <CheckCircle className="text-green-600 mt-0.5 shrink-0" size={20} />
+            ) : (
+              <AlertCircle className="text-red-600 mt-0.5 shrink-0" size={20} />
+            )}
+            <p
+              className={
+                toast.type === "success" ? "text-green-800 text-sm" : "text-red-800 text-sm"
+              }
+            >
+              {toast.message}
+            </p>
+          </motion.div>
+        ))}
+      </AnimatePresence>
     </div>
   );
 };

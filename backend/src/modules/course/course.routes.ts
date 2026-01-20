@@ -69,4 +69,12 @@ router.delete(
     CourseController.deleteCourse(req, res, next)
 );
 
+// POST /api/course/:courseId/enroll-student
+router.post(
+  '/:courseId/enroll-student',
+  instructorAuth,
+  (req: AuthRequest, res: Response, next: NextFunction) =>
+    CourseController.enrollStudent(req, res, next)
+);
+
 export default router;

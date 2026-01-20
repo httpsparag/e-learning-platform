@@ -109,6 +109,38 @@ export class CourseService {
       throw new Error(error.message || 'Failed to fetch courses');
     }
   }
+
+  async enrollStudent(courseId: string, enrollmentData: { studentName: string; studentEmail: string; instructorId: string }) {
+    try {
+      const course = await Course.findById(courseId);
+      if (!course) {
+        throw new Error('Course not found');
+      }
+
+      // Update course enrolled count
+      course.enrolledCount = (course.enrolledCount || 0) + 1;
+      await course.save();
+
+      // TODO: In production, you would:
+      // 1. Create a student record in the Student collection
+      // 2. Create an enrollment record linking student to course
+      // 3. Send email to student with login credentials and link to /student
+      
+      // For now, return success with enrollment details
+      return {
+        message: 'Student enrolled successfully',
+        enrollment: {
+          courseId: course._id,
+          courseName: course.title,
+          studentName: enrollmentData.studentName,
+          studentEmail: enrollmentData.studentEmail,
+          enrolledAt: new Date(),
+        },
+      };
+    } catch (error: any) {
+      throw new Error(error.message || 'Failed to enroll student');
+    }
+  }
 }
 
 export default new CourseService();

@@ -7,6 +7,16 @@ const redisClient = new Redis({
   retryStrategy: (times) => {
     const delay = Math.min(times * 50, 2000);
     return delay;
+  },
+  maxRetriesPerRequest: null,
+  enableReadyCheck: false,
+  enableOfflineQueue: true,
+  reconnectOnError: (err) => {
+    const targetError = 'READONLY';
+    if (err.message.includes(targetError)) {
+      return true;
+    }
+    return false;
   }
 });
 
@@ -15,7 +25,15 @@ redisClient.on('connect', () => {
 });
 
 redisClient.on('error', (err) => {
-  console.error('❌ Redis Error:', err);
+  console.error('❌ Redis Error:', err.message);
+});
+
+redisClient.on('close', () => {
+  console.log('⚠️ Redis Connection Closed');
+});
+
+redisClient.on('reconnecting', () => {
+  console.log('🔄 Redis Reconnecting...');
 });
 
 export default redisClient;

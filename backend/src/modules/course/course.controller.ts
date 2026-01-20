@@ -177,6 +177,28 @@ export class CourseController {
       return sendError(res, 400, error.message);
     }
   }
+
+  // POST /api/course/:courseId/enroll-student
+  async enrollStudent(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { courseId } = req.params;
+      const { studentName, studentEmail, instructorId } = req.body;
+
+      if (!studentName || !studentEmail || !courseId) {
+        return sendError(res, 400, 'Missing required fields');
+      }
+
+      const result = await CourseService.enrollStudent(courseId, {
+        studentName,
+        studentEmail,
+        instructorId: instructorId || req.instructorId,
+      });
+
+      return sendSuccess(res, 201, result.message, result.enrollment);
+    } catch (error: any) {
+      return sendError(res, 400, error.message);
+    }
+  }
 }
 
 export default new CourseController();
